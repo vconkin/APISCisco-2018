@@ -97,7 +97,7 @@ feeding_18
 Selgeby =read.csv("Selgeby_ExtractedData/Selgeby_FullStomachs.csv", header=TRUE)
 labs<-Selgeby$n
 
-feeding_74<-ggplot(Selgeby,aes(Bin, Calculated*100))+
+feeding_74<-ggplot(Selgeby,aes(Bin, PercentCalculated*100))+
   geom_line(linetype="longdash", color="#7b3294", size=1.4)+
   geom_point(size=2)+
   scale_y_continuous(name ="Percent With Food\n",limits = c(0,105),
