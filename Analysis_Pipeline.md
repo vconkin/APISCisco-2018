@@ -2,9 +2,9 @@
 
 The overall goal of the workflow is to synthesize the data from the field (effort information including trawl, date/time, distances, volume filtered, etc.), lab processing (yolk condition, lengths, stomach contents), and zems analysis (zooplankton counts and lengths). These form two branches, fish and zooplankton, that ultimately are combined to calculate selectivity values.  Each piece is laid out here as I worked through them:
 
-1. Fish Data Flow:  [Field Data](#Field Data) —> [Stomach Data](#Stomach Data)
+1. Fish Data Flow:  [Field Data](#Field_Data) —> [Stomach Data](#Stomach_Data)
 
-2. Zems Data Flow:  [Bythotrephes Data](#Bythotrephes Data) —> [Zems Data](#Zems Data) —> [Format](#Format Zems Data) —> [Visualize](#Visualize)
+2. Zems Data Flow:  [Bythotrephes Data](#Bythotrephes_Data) —> [Zems Data](#Zems_Data) —> [Format Zems Data](#Format) —> [Visualize](#Visualize)
 
 3. Diet Selection Analysis:  [Selection](#Selection)
 
@@ -12,7 +12,7 @@ All scripts were run in R using R version 3.5.2 (2018-12-20). Files in the path 
 
 ------
 
-#### <u>Field Data</u>
+#### <u>Field_Data</u>
 
 File name: AI_Coregonus_Copy 
 
@@ -22,7 +22,7 @@ Description: This file takes compiles and visualizes all the data from the field
 
  
 
-#### <u>Stomach Data</u>
+#### <u>Stomach_Data</u>
 
 File name: Larval_Coregonus_processing
 
@@ -32,7 +32,7 @@ Description: This script takes the stomach data to make preliminary diet figures
 
 ------
 
-#### <u>Bythotrephes Data</u> 
+#### <u>Bythotrephes_Data</u> 
 
 File name: Bytho_Upload 
 
@@ -44,7 +44,7 @@ Description: Use the Bytho folder in the Zems directory to upload all the *Bytho
 
  
 
-#### <u>Zems Data</u>
+#### <u>Zems_Data</u>
 
 File name: Zems_1_Upload 
 
@@ -56,7 +56,7 @@ Outputs: All.Samples.csv: measurements and counts for all zooplankton except *By
 
 
 
-#### <u>Format Zems Data</u>
+#### <u>Format</u>
 
 File name: Zems_2_Wrangle
 
