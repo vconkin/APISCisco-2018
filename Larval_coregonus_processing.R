@@ -567,3 +567,23 @@ y<-ggplot(SY, aes(L_avg, Average_Food_items,
         legend.text = element_text(size=10),
         legend.title = element_text(size=12))
 y
+
+##=======Items per stomach==========================================
+barfill<-"#56B4E9"
+barlines<-"#1F3552"
+
+Stomachs$Length_Bin<-as.factor(Stomachs$Length_Bin)
+Stomachs %>% group_by(Length_Bin) %>%
+  summarize(Avg_contents = mean(Average_Food_items), n = n()) -> avg
+n<-avg$n
+
+ggplot(avg, aes(Length_Bin, Avg_contents))+
+  geom_bar(stat="identity", color = barlines, fill = barfill)+
+  scale_x_discrete(name = "\nLength Bin (mm)") +
+  scale_y_continuous(name = "Average No. of Items\nPer Stomach\n",
+                     expand = c(0,0)) +
+  theme_classic() +
+  theme(axis.text=element_text(size=12), 
+        axis.title=element_text(size=12)) +
+  annotate("text", x=1.15:20.15, y=5:5,label=(n), size=3) +
+  annotate("text", x=0.85:19.85, y=5:5, label= "n = ", size=3)
