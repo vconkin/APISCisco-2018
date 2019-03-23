@@ -2,11 +2,11 @@
 
 The overall goal of the workflow is to synthesize the data from the field (effort information including trawl, date/time, distances, volume filtered, etc.), lab processing (yolk condition, lengths, stomach contents), and zems analysis (zooplankton counts and lengths). These form two branches, fish and zooplankton, that ultimately are combined to calculate selectivity values.  Each piece is laid out here as I worked through them:
 
-1. Fish Data Flow:  [Field Data] (#Field Data) —> [Stomach Data] (#Stomach Data)
+1. Fish Data Flow:  [Field Data](#Field Data) —> [Stomach Data](#Stomach Data)
 
-2. Zems Data Flow:  [Bythotrephes Data] (#Bythotrephes Data) —> [Zems Data] (#Zems Data) —> [Format] (#Format Zems Data) —> [Visualize (#Visualize)
+2. Zems Data Flow:  [Bythotrephes Data](#Bythotrephes Data) —> [Zems Data](#Zems Data) —> [Format](#Format Zems Data) —> [Visualize](#Visualize)
 
-3. Diet Selection Analysis:  [Selection] (#Selection)
+3. Diet Selection Analysis:  [Selection](#Selection)
 
 All scripts were run in R using R version 3.5.2 (2018-12-20). Files in the path are included in each file description. 
 
