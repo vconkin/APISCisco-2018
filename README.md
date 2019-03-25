@@ -28,7 +28,7 @@ File name: Larval_Coregonus_processing
 
 Files in path: Larval_Coregonus_processing.xlsx, NC.csv, Selgeby_FullStomachs.csv,
 
-Description: This script takes the stomach data to make preliminary diet figures, and combines some of the data across sheets in the excel file (yolk condition and number of prey items consumed).  It’s useful in visualizing the length and diet data together, but still needs some tweaks in creating n labels for length data to add to plots. The comparison to Selgeby is currently under construction to make a comparable density plot using geometric mean. The script includes extracted data from the Selgeby plots for the percent of stomachs with food, and presence of nauplii and copepodites. The Selgeby data plots are found in each of these sections immediately after the same plot made with the 2018 data.
+Description: Make preliminary diet figures with the stomach data, and combines some of the data across sheets in the excel file (yolk condition and number of prey items consumed).  It’s useful in visualizing the length and diet data together, but still needs some tweaks in creating n labels for length data to add to plots. The comparison to Selgeby is currently under construction to make a comparable density plot using geometric mean. The script includes extracted data from the Selgeby plots for the percent of stomachs with food, and presence of nauplii and copepodites. The Selgeby data plots are found in each of these sections immediately after the same plot made with the 2018 data.
 
 
 
