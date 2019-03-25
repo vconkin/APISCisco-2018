@@ -2,7 +2,7 @@
 
 The overall goal of the workflow is to synthesize the data from the field (effort information including trawl, date/time, distances, volume filtered, etc.), lab processing (yolk condition, lengths, stomach contents), and zems analysis (zooplankton counts and lengths). These form two branches, fish and zooplankton, that ultimately are combined to calculate selectivity values.  Each piece is laid out here as I worked through them:
 
-1. Fish Data Flow:  [Field Data](#Field-Data) —> [Stomach Data](#Stomach-Data)
+1. Fish Data Flow:  [Field Data](#Field-Data) —> [Stomach Data](#Stomach-Data) —> [Historical Data](#1974-Historical-Data)
 
 2. Zems Data Flow:  [Bythotrephes Data](#Bythotrephes-Data) —> [Zems Data](#Zems-Data) —> [Format Zems Data](#Format) —> [Visualize](#Visualize)
 
@@ -29,6 +29,16 @@ File name: Larval_Coregonus_processing
 Files in path: Larval_Coregonus_processing.xlsx, NC.csv, Selgeby_FullStomachs.csv,
 
 Description: This script takes the stomach data to make preliminary diet figures, and combines some of the data across sheets in the excel file (yolk condition and number of prey items consumed).  It’s useful in visualizing the length and diet data together, but still needs some tweaks in creating n labels for length data to add to plots. The comparison to Selgeby is currently under construction to make a comparable density plot using geometric mean. The script includes extracted data from the Selgeby plots for the percent of stomachs with food, and presence of nauplii and copepodites. The Selgeby data plots are found in each of these sections immediately after the same plot made with the 2018 data.
+
+
+
+#### <u>1974 Historical Data</u>
+
+File name: APIS_Selgeby_Joined
+
+Files in path: NC.csv, Selgeby_FullStomachs.csv, GMDensity, APIS_Coregonus_2018.xlsx
+
+Description: Pull in the extracted data from the Selgeby et al. figures and make comparative plots. Data was extracted using Webplotdigitizer, and checked against the numbers presented in the text. This script works through the figures in the same order they appear in the 1994 paper.
 
 ------
 
