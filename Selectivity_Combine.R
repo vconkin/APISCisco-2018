@@ -38,7 +38,7 @@ Effort<-read.csv("Zems/APIS_Cut.csv", header=TRUE)
 # at the bottom, and create a new variable
 # Stomach will group the data, select the prey species and gather the columns of prey
 diet<-select(Contents,Sample_Date, Trawl, Site, Length_Bin,
-             InBin, Nauplii:Chironomid_pupae) 
+             InBin, Nauplii:Chironomid_pupae)
 diet<-diet[-270,]
 diet[is.na(diet)]<-0
 colnames(diet)<-c("Sample_Date","Trawl","Station","Length_Bin","In_Bin","Nauplii",
@@ -53,7 +53,7 @@ colnames(diet)<-c("Sample_Date","Trawl","Station","Length_Bin","In_Bin","Nauplii
 ## Combine sicilis and minutus to genera, then drop the old columns
 ## Same stroke, let's collapse the species columns into a 2: prey species and count
 drop.col<-c('L.minutus', 'L.sicilis')
-diet_comp<-dplyr::mutate(diet, Leptodiaptomus = L.minutus +L.sicilis) %>%
+diet_comp<-mutate(diet, Leptodiaptomus = L.minutus +L.sicilis) %>%
   select(-one_of(drop.col))%>%
   gather(Prey_species, Prey_count, Nauplii:Leptodiaptomus)
 
@@ -74,7 +74,6 @@ st<-inner_join(Totals, stomach, by="Trawl") %>%
   mutate(Prey_Prop = Prey_count/Trawl_Total) %>% 
   select(Trawl, Prey_species, Prey_Prop)
 
-st$Trawl<-as.factor(st$Trawl)
 
 ##=====Zooplankton Proportion=========================
 ## Now let's try to create proportions with the zoop data!
@@ -93,8 +92,6 @@ ZTotals<-group_by(ZDensity, Trawl) %>%
 zt<-inner_join(ZTotals, zoop, by = "Trawl") %>%
   mutate(Env_Prop = Env_count/Trawl_Total) %>%
   select(Trawl, species, Env_Prop, n)
-
-zt$Trawl<-as.factor(zt$Trawl)
 
 ##=====Electivity Calculations==============================
 ## This might be messy but let's bind them together!
