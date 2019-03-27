@@ -18,7 +18,6 @@ NC =read.csv("Selgeby_ExtractedData/NC.csv", header=TRUE)
 excel_sheets("Lake_Superior_Data/APIS_Coregonus_2018.xlsx")
 FTrawl <- read_excel("Lake_Superior_Data/APIS_Coregonus_2018.xlsx", sheet ="FTrawl") 
 FCatch <- read_excel("Lake_Superior_Data/APIS_Coregonus_2018.xlsx", sheet ="FCatch") 
-
 ##==============Combine Trawl and Catch data================
 FNumb <- merge(FTrawl, FCatch, by="Trawl")
 ## Create a Density variable and reset date & Week to be factors
