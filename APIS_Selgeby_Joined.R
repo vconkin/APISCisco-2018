@@ -44,11 +44,13 @@ Density_g<-group_by(FNumb,Week)%>%
             n = sum(Catch))
 
 n_18<-Density_g$n
+labs_18<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
+        "June 26-28", "July 2-5", "July 9-11", "July 16-17", "July 23-25")
 
 gm_18<-ggplot(Density_g, aes(Week, gm)) + 
   geom_errorbar(aes(ymin = gm-se, ymax=gm+se), width=.3) +
   geom_point(size=2) +
-  scale_x_discrete(labels = labs, name = "Sample Date") +
+  scale_x_discrete(labels = labs_18, name = "Sample Date") +
   scale_y_continuous(name = "Geometric Mean Density per 1000 m^3\n",
                      expand = c(0,0)) +
   coord_cartesian(ylim=c(0, 90)) +
@@ -94,8 +96,6 @@ ggarrange(gm_74, gm_18, ncol=2, nrow=1)
 Density_m<-group_by(FNumb,Station, Week)%>%
   summarize(Avg_Density = mean(Density_1000m), n=sum(Catch))
 ## Create custom labels for the time intervals
-labs<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
-        "June 26-28", "July 2-5", "July 9-11", "July 16-17", "July 23-25")
 
 ## to add n values, create a vector of counts for the week
 counts<-group_by(Density_m, Week) %>% summarize(N = sum(n))
@@ -106,7 +106,7 @@ g <- ggplot(Density_m, aes(Week, Avg_Density))
 g+ geom_boxplot(color = "red", fill= "orange", alpha=0.2, lwd= 0.1) +
   geom_jitter(size =1.75, width = 0.2)+
   scale_y_continuous(name ="Coregonus per 1000 m^3", limits= c(-5,220)) +
-  scale_x_discrete(labels = labs)+
+  scale_x_discrete(labels = labs_18)+
   annotate("text", x=1.15:11.15, y=-4:-4,label=(Ns), size=2.5)+
   annotate("text", x=0.85:10.85, y=-4:-4, label= "n =", size=2.5)+
   theme_classic() +
