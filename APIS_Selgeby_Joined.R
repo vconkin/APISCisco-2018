@@ -44,11 +44,13 @@ Density_g<-group_by(FNumb,Week)%>%
             n = sum(Catch))
 
 n_18<-Density_g$n
+labs_18<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
+        "June 26-28", "July 2-5", "July 9-11", "July 16-17", "July 23-25")
 
 gm_18<-ggplot(Density_g, aes(Week, gm)) + 
   geom_errorbar(aes(ymin = gm-se, ymax=gm+se), width=.3) +
   geom_point(size=2) +
-  scale_x_discrete(labels = labs, name = "Sample Date") +
+  scale_x_discrete(labels = labs_18, name = "Sample Date") +
   scale_y_continuous(name = "Geometric Mean Density per 1000 m^3\n",
                      expand = c(0,0)) +
   coord_cartesian(ylim=c(0, 90)) +
@@ -94,7 +96,7 @@ ggarrange(gm_74, gm_18, ncol=2, nrow=1)
 Density_m<-group_by(FNumb,Station, Week)%>%
   summarize(Avg_Density = mean(Density_1000m), n=sum(Catch))
 ## Create custom labels for the time intervals
-labs<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
+labs_18<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
         "June 26-28", "July 2-5", "July 9-11", "July 16-17", "July 23-25")
 
 ## to add n values, create a vector of counts for the week
@@ -106,13 +108,35 @@ g <- ggplot(Density_m, aes(Week, Avg_Density))
 g+ geom_boxplot(color = "red", fill= "orange", alpha=0.2, lwd= 0.1) +
   geom_jitter(size =1.75, width = 0.2)+
   scale_y_continuous(name ="Coregonus per 1000 m^3", limits= c(-5,220)) +
-  scale_x_discrete(labels = labs)+
+  scale_x_discrete(labels = labs_18)+
   annotate("text", x=1.15:11.15, y=-4:-4,label=(Ns), size=2.5)+
   annotate("text", x=0.85:10.85, y=-4:-4, label= "n =", size=2.5)+
   theme_classic() +
   theme(axis.text=element_text(size=8), 
         axis.title=element_text(size=10,face="bold"), 
         plot.title=element_text(size=10,face="bold")) 
+
+##======Stomach content by Length=======================================
+labs<-Stomachs$n
+
+feeding_74<-ggplot(Stomachs,aes(Bin, PercentCalculated*100))+
+  geom_line(linetype="longdash", color="#7b3294", size=1.4)+
+  geom_point(size=2)+
+  scale_y_continuous(name ="Percent With Food\n",limits = c(0,105),
+                     expand = c(0,0)) +
+  scale_x_continuous(name = "\nLength Bin (mm)", 
+                     breaks = seq(6,18, by =1),limits = c(6,18))+
+  labs(title = "1974\n", tag = "(A)") +
+  theme_classic()+
+  theme(axis.text=element_text(size=12, face="bold"), 
+        axis.title=element_text(size=12,face="bold"), 
+        plot.title=element_text(size=12,face="bold"),
+        plot.tag=element_text(size=12),
+        plot.tag.position = "topleft") +
+  annotate("text", x=9.20:17.20, y=2:2,label=labs, size=2.5) +
+  annotate("text", x=8.80:16.80, y=2:2, label= "n = ", size=2.5)
+
+feeding_74
 
 ##======Nauplii & Copepodites==========================================
 ## create n labels for the plot
