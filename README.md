@@ -36,7 +36,7 @@ Description: Make preliminary diet figures with the stomach data, and combines s
 
 File name: APIS_Selgeby_Joined
 
-Files in path: NC.csv, Selgeby_FullStomachs.csv, GMDensity, APIS_Coregonus_2018.xlsx
+Files in path: NC.csv, Selgeby_FullStomachs.csv, GMDensity.csv, APIS_Coregonus_2018.xlsx
 
 Description: Pull in the extracted data from the Selgeby et al. figures and make comparative plots. Data was extracted using Webplotdigitizer, and checked against the numbers presented in the text. This script works through the figures in the same order they appear in the 1994 paper.
 
