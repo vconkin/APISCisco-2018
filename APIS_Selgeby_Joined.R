@@ -23,26 +23,23 @@ FCatch <- read_excel("Lake_Superior_Data/APIS_Coregonus_2018.xlsx", sheet ="FCat
 FNumb <- merge(FTrawl, FCatch, by="Trawl")
 ## Create a Density variable and reset date & Week to be factors
 ## We also need to convert from liters to 1000 cubic meters
-FNumb$Density_1000m<-((FNumb$Catch)/(FNumb$Volume_L)*1000000)
+FNumb$Density_1000m<-((FNumb$Catch)/(FNumb$Volume_L)*10^6)
 FNumb$Date<-as.factor(FNumb$Date)
 FNumb$Week<-as.factor(FNumb$Week)
 
 ##===========Geometric mean plot===============
 ## To make a comparable plot, we actually need to calculate geometric mean
-## geometric.mean comes from the psych package, function is below:
-
-## "geometric.mean" <- function(x,na.rm=TRUE){ 
-##    exp(mean(log(x),na.rm=na.rm)) }
-
-## There are a lot of zeros in this data set, so we have a workaround:
-## we add 0.01 to all values, calculate the mean, and subtract at the end
-
 serror <- function(x) {sd(x)/sqrt(length(x))}
 gm_mean = function(a){prod(a)^(1/length(a))}
 
+## There are a lot of zeros in this data set, so we have a workaround:
+## we add the smallest overall density in number / 1000 cubic meters
+## to all values, calculate the mean, and subtract at the end 
+x<- min(FNumb[FNumb$Density_1000m>0,30])
+
 Density_g<-group_by(FNumb,Week)%>%
   summarize(Avg_Density = mean(Density_1000m), 
-            gm = gm_mean((Density_1000m + 0.01))-0.01,
+            gm = gm_mean((Density_1000m + x))-x,
             se = serror(Density_1000m),
             n = sum(Catch))
 
@@ -54,7 +51,7 @@ gm_18<-ggplot(Density_g, aes(Week, gm)) +
   scale_x_discrete(labels = labs, name = "Sample Date") +
   scale_y_continuous(name = "Geometric Mean Density per 1000 m^3\n",
                      expand = c(0,0)) +
-  coord_cartesian(ylim=c(0, 55)) +
+  coord_cartesian(ylim=c(0, 90)) +
   labs(title = "2018\n", tag = "(B)") +
   theme_classic() +
   theme(axis.text=element_text(size=12, face="bold"), 
@@ -62,7 +59,7 @@ gm_18<-ggplot(Density_g, aes(Week, gm)) +
         plot.title=element_text(size=12,face="bold"),
         plot.tag=element_text(size=12),
         plot.tag.position = "topleft") +
-  geom_text(aes(label=paste0("n=",n_18 )), y = 53, size = 3)
+  geom_text(aes(label=paste0("n=",n_18 )), y = 87, size = 3)
 
 gm_18
 
