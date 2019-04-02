@@ -46,8 +46,10 @@ ZDensity$Date =factor(ZDensity$Date,
 ZDensity$Station =factor(ZDensity$Station, 
                          levels=c("71","66","44","45","87",
                                   "139","525","33","526","527"))
-#Then by date
-ggplot(ZDensity,aes(x=Date, y= Density_L,fill=species)) +
+#Then look at mean density by date
+ZDensity %>% group_by(Date, species) %>%
+  summarize(Mean_Density = mean(Density_L)) %>%
+ggplot(aes(x=Date, y= Mean_Density,fill=species)) +
   geom_bar(position="fill", stat="identity") + 
   scale_x_discrete(name = "Date",
                    breaks = c("5/15/2018", "5/29/2018","6/12/2018",
@@ -60,7 +62,10 @@ ggplot(ZDensity,aes(x=Date, y= Density_L,fill=species)) +
   theme(axis.text=element_text(size=12), 
         axis.title=element_text(size=12,face="bold"))
 
-ggplot(ZDensity,aes(x=Date, y= Density_L,fill=species)) +
+
+ZDensity %>% group_by(Date, species) %>%
+  summarize(Mean_Density = mean(Density_L)) %>%
+ggplot(aes(x=Date, y= Mean_Density,fill=species)) +
   geom_bar(position="stack", stat="identity") + 
   scale_x_discrete(breaks = c("5/15/2018", "5/29/2018","6/12/2018",
                               "6/26/2018","7/9/2018","7/23/2018"),
@@ -89,7 +94,9 @@ ggplot(ZDensity, aes(x= Week, y = Density_L)) +
         strip.background = element_rect(color = "white", fill = "white"))
 
 ## Look at island groups instead
-ggplot(ZDensity, aes(x= Week, y = Density_L)) +
+ZDensity %>% group_by(Week, species, Group) %>%
+  summarize(Mean_Density = mean(Density_L)) %>%
+ggplot( aes(x= Week, y = Mean_Density)) +
   geom_bar(aes(fill = species), stat="identity")+
   scale_x_continuous(name = "Week of", breaks = seq(20,30, by = 2),
                      labels = c("5/14", "5/29", "6/12", 
@@ -106,7 +113,9 @@ ggplot(ZDensity, aes(x= Week, y = Density_L)) +
         strip.background = element_rect(color = "white", fill = "white"))
 
 ## Filled proportion
-ggplot(ZDensity, aes(x= Week, y = Density_L)) +
+ZDensity %>% group_by(Week, species, Group) %>%
+  summarize(Mean_Density = mean(Density_L)) %>%
+ggplot( aes(x= Week, y = Mean_Density)) +
   geom_bar(aes(fill = species), stat="identity", position = "fill")+
   scale_x_continuous(name = "Week of", breaks = seq(20,30, by = 2),
                      labels = c("5/14", "5/29", "6/12", 
