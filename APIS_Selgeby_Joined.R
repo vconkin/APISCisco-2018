@@ -18,6 +18,7 @@ NC =read.csv("Selgeby_ExtractedData/NC.csv", header=TRUE)
 excel_sheets("Lake_Superior_Data/APIS_Coregonus_2018.xlsx")
 FTrawl <- read_excel("Lake_Superior_Data/APIS_Coregonus_2018.xlsx", sheet ="FTrawl") 
 FCatch <- read_excel("Lake_Superior_Data/APIS_Coregonus_2018.xlsx", sheet ="FCatch") 
+
 ##==============Combine Trawl and Catch data================
 FNumb <- merge(FTrawl, FCatch, by="Trawl")
 ## Create a Density variable and reset date & Week to be factors
@@ -40,7 +41,7 @@ Density_g<-group_by(FNumb,Week)%>%
   summarize(Avg_Density = mean(Density_1000m), 
             gm = gm_mean((Density_1000m + x))-x,
             se = serror(Density_1000m),
-            n = sum(Catch))
+            n = n())
 
 n_18<-Density_g$n
 labs_18<-c("May 14-15","May 21-23", "May 29", "June 4-5", "June 12-13", "June 18-20",
@@ -50,8 +51,7 @@ gm_18<-ggplot(Density_g, aes(Week, gm)) +
   geom_errorbar(aes(ymin = gm-se, ymax=gm+se), width=.3) +
   geom_point(size=2) +
   scale_x_discrete(labels = labs_18, name = "Sample Date") +
-  scale_y_continuous(name = "Geometric Mean Density per 1000 m^3\n",
-                     expand = c(0,0)) +
+  scale_y_continuous(name = "Geometric Mean Density per 1000 m^3\n") +
   coord_cartesian(ylim=c(0, 90)) +
   labs(title = "2018\n", tag = "(B)") +
   theme_classic() +
@@ -118,7 +118,7 @@ g+ geom_boxplot(color = "red", fill= "orange", alpha=0.2, lwd= 0.1) +
 ##======Stomach content by Length=======================================
 labs<-Stomachs$n
 
-feeding_74<-ggplot(Stomachs,aes(Bin, PercentCalculated*100))+
+feeding_74<-ggplot(Stomachs,aes(Bin, ProportionCalculated*100))+
   geom_line(linetype="longdash", color="#7b3294", size=1.4)+
   geom_point(size=2)+
   scale_y_continuous(name ="Percent With Food\n",limits = c(0,105),
