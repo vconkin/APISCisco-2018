@@ -1,36 +1,49 @@
-rm(list=ls(all=TRUE)) #wipes your R workspace clean.
-
+##############################################################
+##############################################################
+##  
+##  APIS Cisco (Lucke et al.) manuscript
+##  
 ## Note that aside from needing data files "All.Samples.csv" to execute this code, 
 ##  you need the following csv file in your working directory:
 ## "LWtable.csv" , and "Bytho.Samples", as well as the summary csv for the 
 ## larval fish tows and the zoop tows, "Effort" and "Zoop"
-
+##
 ##  The following output tables will be created and dumped in your working 
-#directory folder:
-
+## directory folder:
+## 
 ## "TotalZoopTable.csv" = list of total ZP density & biomass by sampleID (Step ##)
 ## "ZTrawl.csv" = Basic summary of trawl and species data
 ## "ZDenstity.csv" = Built from ZTrawl, calculates density and other parameters
 ## "ZLength.csv" = Trawl info, and all lengths for every zoop that was measured
 ## "SumBySampleSpecies.csv" = #/L, ug/L, mean/sd lengths and weights by trawl
 ## "TotalZoopTable18.csv" = Total biomass and density by trawl across all species
+## ===========================================================
+## Clear the environment first ===============================
+## ===========================================================
+rm(list = ls(all.names=TRUE))
 
-#--------------Read & Merge------------------------------------------------
+
+## ===========================================================
+## Load Packages =============================================
+## ===========================================================
 library(plyr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(readxl)
-        
-## Read in that merged file created in  part 1
-All.Samples=read.csv("All.Samples.csv", header=TRUE)
-Bytho.Samples=read.csv("Bytho/Bytho.Samples.csv", header=TRUE)
+    
+    
+## ===========================================================
+## Load in the data ==========================================
+## ===========================================================
+All.Samples <- read.csv("data/Superior_Files/Summaries/All.Samples.csv", header = TRUE)
+Bytho.Samples <- read.csv("data/Superior_Files/Summaries/Bytho.Samples.csv", header = TRUE)
 
 ## We'll need information about the fish and zooplankton efforts
 ## These files are trimmed down from the original to minimze extraneous
 ## data and columns we need to manage
-Effort<-read.csv("APIS_Cut.csv", header=TRUE)
-Zoop<-read.csv("Zoop_Cut.csv", header=TRUE)
+Effort <- read.csv("data/Superior_Files/APIS_Cut.csv", header = TRUE)
+Zoop <- read.csv("data/Superior_Files/Zoop_Cut.csv", header = TRUE)
 
 #--------------Summarize all length data---------------------------------------
 # First we compile the length data
@@ -66,7 +79,7 @@ All.Lengths$Date=x
 # We will do this a couple times to make sure all the files
 # have the right format before they are written
 
-write.csv(All.Lengths, "ZLength.csv", row.names = FALSE)
+write.csv(All.Lengths, "data/Superior_Files/Summaries/ZLength.csv", row.names = FALSE)
 #--------------Combine the Zooplankton Data---------------------------------
 # Since this data set is built only of observed species, we want to add in zeros
 # for any species not observed to fill out our time series
@@ -118,7 +131,7 @@ B_mod$species<-as.factor(B_mod$species)
 ZTrawl<-bind_rows(ztrawls, B_mod) %>% 
   select(Serial:Group, Volume_L)
 
-write.csv(ZTrawl, "ZTrawl.csv", row.names = FALSE)
+write.csv(ZTrawl, "data/Superior_Files/Summaries/ZTrawl.csv", row.names = FALSE)
 
 #-------Calculate Density----------------------------------------------------
 ## Use ZTrawl to calculate density and other sample parameters
@@ -128,7 +141,7 @@ ZDensity<-select(ZTrawl, Trawl:Group, Serial:Total, Volume_L) %>%
             N.Per.Jar   = sum(Total)*(Ex.Coef),
             Density_L   = sum((Total)*(Ex.Coef/Volume_L)))
 
-write.csv(ZDensity, "ZDensity.csv", row.names = FALSE)
+write.csv(ZDensity, "data/Superior_Files/Summaries/ZDensity.csv", row.names = FALSE)
 
 #-------Calculate Biomass----------------------------------------------------
 # Step 7a-e: Calculate biomass per individual using L:W equations 
@@ -137,7 +150,7 @@ write.csv(ZDensity, "ZDensity.csv", row.names = FALSE)
 # and "a" and "B" are coefficients called from a separate table.
 
 ## Step 7a: Read table containing species names and LW coefficeints.
-LW= read.csv("LWtable_forHannah.csv", header=TRUE)
+LW= read.csv("data/Superior_Files/LWtable_forHannah.csv", header=TRUE)
 
 
 ## Step 7b: Merge LW coefficents to resepctive species names for each row in the All.Lengths file. 
@@ -151,7 +164,7 @@ detach(ZLW)
 
 #--------------Export Biomass----------------------------------------------------------
 # Step 9: Export individual-based table, which has each L and W for each zoop measured.
-write.csv(ZLW, "LWTable.csv", row.names = FALSE)
+write.csv(ZLW, "data/Superior_Files/Summaries/LWTable.csv", row.names = FALSE)
 
 #---------Summarize by Species----------------------------------------------
 # Step 10: Summarize count and biomass data per sample  
@@ -186,7 +199,7 @@ SumBySampleSpecies <- group_by(ZLW, Trawl,species) %>%
 # in these rows, R will not properly calculate these values
 
 # Then we export it
-write.csv(SumBySampleSpecies, "SumBySampleSpecies.csv", row.names=F)
+write.csv(SumBySampleSpecies, "data/Superior_Files/Summaries/SumBySampleSpecies.csv", row.names=F)
 
 #---------------------- By total ZP density/L & biomass ug DW/L--------------------- 
 TotalZoopTable= ddply(SumBySampleSpecies,.(Trawl), summarize,
@@ -194,5 +207,5 @@ TotalZoopTable= ddply(SumBySampleSpecies,.(Trawl), summarize,
                       TotalDensity_L = sum(Density_L),
                       .drop=F)
 
-write.csv(TotalZoopTable, "TotalZoopTable18.csv", row.names=F)
+write.csv(TotalZoopTable, "data/Superior_Files/Summaries/TotalZoopTable18.csv", row.names=F)
 #----------------------------------------END----------------------------------------

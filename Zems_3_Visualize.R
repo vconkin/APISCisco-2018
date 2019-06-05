@@ -8,10 +8,10 @@ library(ggridges)
 library(ggpubr)
 
 # Start by loading them in
-ZTrawl =read.csv("ZTrawl.csv", header=TRUE)
-ZLength =read.csv("ZLength.csv", header=TRUE)
-ZDensity =read.csv("ZDensity.csv", header=TRUE)
-BMass =read.csv("SumBySampleSpecies.csv", header=TRUE)
+ZTrawl =read.csv("data/Superior_Files/Summaries/ZTrawl.csv", header=TRUE)
+ZLength =read.csv("data/Superior_Files/Summaries/ZLength.csv", header=TRUE)
+ZDensity =read.csv("data/Superior_Files/Summaries/ZDensity.csv", header=TRUE)
+BMass =read.csv("data/Superior_Files/Summaries/SumBySampleSpecies.csv", header=TRUE)
 
 #--------------Density across time------------------------------------
 # Plot species by trawl

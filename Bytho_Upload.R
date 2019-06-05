@@ -1,21 +1,28 @@
-rm(list=ls(all=TRUE)) #wipes your R workspace clean.
+##############################################################
+##############################################################
+##  
+##  APIS Cisco (Lucke et al.) manuscript
+##  
+## Data files are from Lake Superior larval coregonid study, script modified from Brian O'Malley. 
+## The following output tables will be created and dumped in your working directory folder:
+## 
+## "Bytho.Samples.csv" = merged file of all raw data files (Step 1)
+## This is a modified version of Zems_1, dealing only with the Bythotrephes data
+## Since Bythotrephes were counted across the whole sample rather than in a subset,
+## they have their own upload process that results in different calculations.
+##############################################################
+##############################################################
+## ===========================================================
+## Clear the environment first ===============================
+## ===========================================================
+rm(list = ls(all = TRUE))
 
-# Data files are from Lake Superior larval coregonid study, script modified from Brian O'Malley. 
-# The following output tables will be created 
-# and dumped in your working directory folder:
 
-# "Bytho.Samples.csv" = merged file of all raw data files (Step 1)
-# This is a modified version of Zems_1, dealing only with the Bythotrephes data
-# Since Bythotrephes were counted across the whole sample rather than in a subset,
-# they have their own upload process that results in different calculations
-
-#-----------------------------------------------------------------------------------# 
-# Step 1: First read in all the files you want and rename to a shortened version of
-# file name, you will need to combine all .csv sample files into one long merged file
-setwd("C:/Users/vsluc/Documents/UVM/Data Analysis/Zems/Bytho")
-
+## ===========================================================
+## 
+## ===========================================================
 # Make a list of all the files in the folder
-datafiles <- dir(path = ".", pattern="*.csv")
+datafiles <- dir(path = "data/Superior_Files/Bytho", pattern="*.csv", full.names = TRUE)
 
 # Make an empty vector where you can put the names of each file
 filelist <- rep(NA, length(datafiles))
@@ -66,5 +73,5 @@ Bytho.Samples <- subset(summaryfile, select = c(subSampleID,
                                               species,
                                               organismCount,
                                               length))
-write.csv(Bytho.Samples, "Bytho.Samples.csv", row.names=FALSE)
+write.csv(Bytho.Samples, "data/Superior_Files/Summaries/Bytho.Samples.csv", row.names = FALSE)
 
