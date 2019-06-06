@@ -13,7 +13,7 @@
 ## 
 ## "TotalZoopTable.csv" = list of total ZP density & biomass by sampleID (Step ##)
 ## "ZTrawl.csv" = Basic summary of trawl and species data
-## "ZDenstity.csv" = Built from ZTrawl, calculates density and other parameters
+## "ZDensity.csv" = Built from ZTrawl, calculates density and other parameters
 ## "ZLength.csv" = Trawl info, and all lengths for every zoop that was measured
 ## "SumBySampleSpecies.csv" = #/L, ug/L, mean/sd lengths and weights by trawl
 ## "TotalZoopTable18.csv" = Total biomass and density by trawl across all species
@@ -71,15 +71,12 @@ All.Lengths<-bind_rows(ZLength, Bytho_L) %>%
 # R is pretty picky about date format.
 # It recognizes excel default date format as factor and not Date.
 # Need to change the date foramt to YYYY-MM-DD using:
-strDates <- c(levels(All.Lengths$Date))
-dates <- as.Date(strDates, "%m/%d/%Y")
-x=as.Date(All.Lengths$Date,"%m/%d/%Y")
-All.Lengths$Date=x
+All.Lengths$Date=as.Date(All.Lengths$Date,"%m/%d/%Y")
 
 # We will do this a couple times to make sure all the files
 # have the right format before they are written
 
-write.csv(All.Lengths, "data/Superior_Files/Summaries/ZLength.csv", row.names = FALSE)
+#write.csv(All.Lengths, "data/Superior_Files/Summaries/ZLength.csv", row.names = FALSE)
 #--------------Combine the Zooplankton Data---------------------------------
 # Since this data set is built only of observed species, we want to add in zeros
 # for any species not observed to fill out our time series
@@ -131,17 +128,17 @@ B_mod$species<-as.factor(B_mod$species)
 ZTrawl<-bind_rows(ztrawls, B_mod) %>% 
   select(Serial:Group, Volume_L)
 
-write.csv(ZTrawl, "data/Superior_Files/Summaries/ZTrawl.csv", row.names = FALSE)
+#write.csv(ZTrawl, "data/Superior_Files/Summaries/ZTrawl.csv", row.names = FALSE)
 
 #-------Calculate Density----------------------------------------------------
 ## Use ZTrawl to calculate density and other sample parameters
 ZDensity<-select(ZTrawl, Trawl:Group, Serial:Total, Volume_L) %>%
   group_by(Trawl, species) %>%
-  mutate(N.Measured  = sum(Total),
-            N.Per.Jar   = sum(Total)*(Ex.Coef),
-            Density_L   = sum((Total)*(Ex.Coef/Volume_L)))
+  mutate(N_Counted  = sum(Total),
+            N_Jar   = N_Counted*Ex.Coef,
+            Density_L   = N_Jar/Volume_L)
 
-write.csv(ZDensity, "data/Superior_Files/Summaries/ZDensity.csv", row.names = FALSE)
+#write.csv(ZDensity, "data/Superior_Files/Summaries/ZDensity.csv", row.names = FALSE)
 
 #-------Calculate Biomass----------------------------------------------------
 # Step 7a-e: Calculate biomass per individual using L:W equations 
@@ -158,13 +155,13 @@ ZLW<- left_join(All.Lengths,LW,by="species")
 
 ## Step 7c: Add columns calculating biomass (ie ln_W) using length,ln(a),and B.
 attach(ZLW)
-ZLW$ln_W= lnA + B * log(length)
-ZLW$IndDWug= exp(ZLW$ln_W)
+#ZLW$ln_W= lnA + B * log(length)
+ZLW$IndDWug= exp(lnA + B * log(length))
 detach(ZLW)
 
 #--------------Export Biomass----------------------------------------------------------
 # Step 9: Export individual-based table, which has each L and W for each zoop measured.
-write.csv(ZLW, "data/Superior_Files/Summaries/LWTable.csv", row.names = FALSE)
+#write.csv(ZLW, "data/Superior_Files/Summaries/LWTable.csv", row.names = FALSE)
 
 #---------Summarize by Species----------------------------------------------
 # Step 10: Summarize count and biomass data per sample  
@@ -183,29 +180,59 @@ ZLW$species<-as.factor(ZLW$species)
 #and finally create the summary variables
 SumBySampleSpecies <- group_by(ZLW, Trawl,species) %>%
   filter(!is.na(species)) %>%
-  summarise(Exp.Coeff   = mean(subSampleExpansionCoef),
-          N.Measured  = sum(organismCount),
-          N.Per.Jar   = sum(organismCount)*mean(subSampleExpansionCoef),
-          Density_L   = sum(organismCount)*mean(subSampleExpansionCoef)/mean(Volume_L),          
-          BioDWugL    = mean(IndDWug, na.rm = TRUE)*Density_L,
-          mnIndivDW   = mean(IndDWug, na.rm = TRUE),
-          sd_mnDW     = sd(IndDWug, na.rm = TRUE),
-          mnIndvLength  = mean(length, na.rm = TRUE),
-          sd_mnLength   = sd(length, na.rm = TRUE))
+  mutate(N_Measured = length(!is.na(length))) %>%
+  summarise(N_Measured  = mean(N_Measured),
+          Mn_IndDW_ug   = mean(IndDWug, na.rm = TRUE),
+          SD_Mn_IndDW_ug     = sd(IndDWug, na.rm = TRUE),
+          Mn_IndLength_mm  = mean(length, na.rm = TRUE),
+          SD_MnLength_mm   = sd(length, na.rm = TRUE))
 
-# Since many of the nauplii were counted but not measured, all the biomass
-# calculations need to use the mean individual length and exclude and NAs 
-# in the data (for the ones with no measured length). If there are NAs left
-# in these rows, R will not properly calculate these values
+
+
+Zoop_Summary<-left_join(SumBySampleSpecies,ZDensity,by = c("Trawl","species")) 
+
+#This adds all observed species to each trawl so we can include 0s
+Zoop_Summary<-Zoop_Summary %>% complete(Trawl,species = unique(.$species)) 
+
+#Assigns taxa group names to each species
+Species_Group<-ZLW %>% 
+  distinct(species,Group.y) %>% 
+  rename(Taxa_Group = Group.y)
+
+#Add taxa group names for each species for later binning if necessary, and then selects subset of
+#data that does not include effort data (which will be added later)
+Zoop_Summary<-left_join(Zoop_Summary,Species_Group) %>% 
+  select(Trawl,-Serial,-Date,-Week,-Jday,-Station,-Group,species,Taxa_Group,N_Counted,N_Jar,Density_L,N_Measured,Mn_IndDW_ug,
+         SD_Mn_IndDW_ug,Mn_IndLength_mm,SD_MnLength_mm)
+
+#Add biomass to the data set
+attach(Zoop_Summary)
+Zoop_Summary$BiomassDW_ugL = Density_L*Mn_IndDW_ug
+detach(Zoop_Summary)
+
+#Adds in the effort data
+Zoop_Summary <- left_join(Zoop_Summary,Effort, by = c("Trawl")) %>% 
+  select(Trawl,SerialIn,Date,Week,Jday,Station,Group,species,Taxa_Group,N_Counted,N_Jar,Density_L,N_Measured,Mn_IndDW_ug,
+         SD_Mn_IndDW_ug,Mn_IndLength_mm,SD_MnLength_mm,BiomassDW_ugL) %>% 
+  rename("Serial" = "SerialIn")
+
+#Add in 0s for taxa that were not found in each sample
+Zoop_Summary$N_Counted[is.na(Zoop_Summary$N_Counted)] <- 0
+Zoop_Summary$N_Jar[is.na(Zoop_Summary$N_Jar)] <- 0
+Zoop_Summary$Density_L[is.na(Zoop_Summary$Density_L)]<-0
+Zoop_Summary$N_Measured[is.na(Zoop_Summary$N_Measured)] <- 0
+Zoop_Summary$BiomassDW_ugL[is.na(Zoop_Summary$BiomassDW_ugL)] <- 0
+
+
 
 # Then we export it
-write.csv(SumBySampleSpecies, "data/Superior_Files/Summaries/SumBySampleSpecies.csv", row.names=F)
+write.csv(Zoop_Summary, "data/Superior_Files/Summaries/Zoop_Summary.csv", row.names=F, quote = FALSE)
 
 #---------------------- By total ZP density/L & biomass ug DW/L--------------------- 
-TotalZoopTable= ddply(SumBySampleSpecies,.(Trawl), summarize,
+#TotalZoopTable= ddply(SumBySampleSpecies,.(Trawl), summarize,
                       TotalBiomass_ug_L = sum(BioDWugL),
                       TotalDensity_L = sum(Density_L),
                       .drop=F)
 
-write.csv(TotalZoopTable, "data/Superior_Files/Summaries/TotalZoopTable18.csv", row.names=F)
+#write.csv(TotalZoopTable, "data/Superior_Files/Summaries/TotalZoopTable18.csv", row.names=F)
 #----------------------------------------END----------------------------------------
