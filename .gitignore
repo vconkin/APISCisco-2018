@@ -1,0 +1,19 @@
+# Data files (so that they are not in a public repo)
+data/Superior_Files
+data/.DS_Store
+data/*.xlsx
+data/*.csv
+
+# Old files that don't need to be version controlled
+zzzOld/
+
+# History files
+.Rhistory
+
+# R data files from past sessions
+.Rdata
+.Rproj.user
+.DS_Store
+
+# Preview of README.md
+README.html
