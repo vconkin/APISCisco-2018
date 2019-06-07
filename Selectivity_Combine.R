@@ -271,7 +271,7 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   geom_hline(yintercept = 0) +
   geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.075), label = "nf", size = 3) +
   scale_y_continuous(limits = c(-1,1), expand = c(0, 0))+
-  labs(x = "Prey Species", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
+  labs(x = "Prey Taxa", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
         axis.text.x = element_text(size = 15, angle = 90, vjust = 0.5, hjust = 1),
