@@ -33,10 +33,10 @@ library(ggplot2)       # visualizations
 p.length <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Length_Condition")
 diet.cont <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Mod")[-270,] %>% 
   mutate(trawl = as.integer(Trawl))
-envir.prey <- read.csv("data/Superior_Files/Summaries/ZDensity.csv", header = TRUE) %>% 
-  mutate(Density_L = as.numeric(Density_L),
+envir.prey <- read.csv("data/Superior_Files/Summaries/Zoop_Summary.csv", header = TRUE) %>% 
+  mutate(density.l = as.numeric(density.l),
          species = as.character(species)) %>% droplevels()
-effort <- read.csv("data/Superior_Files/APIS_Cut.csv", header = TRUE) %>% 
+effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE) %>% 
   select(trawl = Trawl, week = Week)
 
 
@@ -91,7 +91,7 @@ trawl.list <- unique(diet.comp$trawl)
 ## -----------------------------------------------------------
 ## Restrict DF to the selected variables and rename variables
 ## -----------------------------------------------------------
-envir.prey.filtered <- envir.prey %>% select(trawl = Trawl, species, density.l = Density_L) %>% 
+envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>% 
   mutate(species = gsub("Leptodiaptomus", "Calanoidae", species),
          species = gsub("Limnocalanus", "Calanoidae", species),
          species = gsub("Epischura", "Calanoidae", species),
@@ -140,14 +140,14 @@ diet.cont.prop <- full_join(diet.cont.species, diet.cont.total) %>%
 ## -----------------------------------------------------------
 ## Clean up environment
 ## -----------------------------------------------------------
-rm(diet.comp, diet.comp.full, diet.cont, diet.cont.species, diet.cont.total)
+rm(diet.comp, diet.cont, diet.cont.species, diet.cont.total)
 
 
 ## ===========================================================
 ## Zooplankton (Environment) Proportion ======================
 ## ===========================================================
 ## -----------------------------------------------------------
-## Create a loop function to add zeros for all prey taxa missing from each serial
+## Create a loop function to add zeros for all prey taxa missing that was found in diet
 ## -----------------------------------------------------------
 ## Apply loop function
 envir.prey.missing <-  data.frame(do.call(rbind, lapply(trawl.list, function(i) {
@@ -161,7 +161,7 @@ envir.prey.missing <-  data.frame(do.call(rbind, lapply(trawl.list, function(i) 
 })))
 
 ## -----------------------------------------------------------
-## 
+## Combine data and missing taxa
 ## -----------------------------------------------------------
 envir.prey.all <- bind_rows(envir.prey.filtered, envir.prey.missing)
 
