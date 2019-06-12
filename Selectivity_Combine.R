@@ -194,7 +194,7 @@ rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.
 
 
 ## ===========================================================
-## Electivity Calculations ===================================
+## Selectivity Calculations ===================================
 ## ===========================================================
 ## -----------------------------------------------------------
 ## Combine diet and environment proportions, 
@@ -202,35 +202,35 @@ rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.
 ## and calculate diet:envir ratio
 ## -----------------------------------------------------------
 larval.diet.env.prop <- left_join(diet.cont.prop, envir.prey.prop) %>%
-  mutate(diet.envir = diet.prop / envir.prop)
+  mutate(diet.envir = diet.prop / envir.prop,
+         ## manually assign r/p as 1 if prey is found in diet but not environment (assumes they consumed all available prey)
+         diet.envir = ifelse(diet.envir == Inf, 1, diet.envir)) %>% 
+  ## remove any no diet, no environment taxa
+  filter(!is.na(diet.envir))
 
 ## -----------------------------------------------------------
-## Remove all infinate values (created by a zero divisor) and calculate alpha ((r/p)/sum(r/p))
+## Calculate alpha ((r/p)/sum(r/p))
 ## -----------------------------------------------------------
-larval.diet.env.prop.woInf <- larval.diet.env.prop %>% filter(diet.envir != Inf) %>% 
+larval.alpha <- larval.diet.env.prop %>%
   group_by(trawl) %>% 
   mutate(alpha = diet.envir / sum(diet.envir),
          alpha = ifelse(is.na(alpha) == TRUE, 0, alpha))
 
 ## -----------------------------------------------------------
-## and manually assign alpha as 1 (assumes they consumed all available prey)
+## Calculate electivity
 ## -----------------------------------------------------------
-larval.diet.env.prop.wInf <- larval.diet.env.prop %>% filter(diet.envir == Inf) %>% 
-  mutate(alpha = 1)
-
-## -----------------------------------------------------------
-## Combine non-Inf and Inf DFs
-## -----------------------------------------------------------
-larval.diet.env.prop.all <- bind_rows(larval.diet.env.prop.woInf, larval.diet.env.prop.wInf) %>% 
-  mutate(E = (alpha - (1 / length(species.list))) / (alpha + (1 / length(species.list)))) %>% 
-  left_join(effort)
+larval.selectivity <- left_join(effort, larval.alpha) %>% 
+  filter(!is.na(species)) %>% 
+  group_by(week) %>% 
+  mutate(n.species = n_distinct(species)) %>% ungroup() %>% 
+  mutate(E = (alpha - (1 / n.species)) / (alpha + (1 / n.species)))
 
 
 ## ===========================================================
 ## Average the Selectivity Values ============================
 ## ===========================================================
-larval.selectivity.week <- left_join(effort, larval.diet.env.prop.all) %>%
-  group_by(week, species) %>%
+larval.selectivity.week <- larval.selectivity %>%
+  group_by(week, species) %>% 
   summarize(mean.alpha = mean(alpha), 
             mean.E = mean(E),
             sd.alpha = sd(alpha),
@@ -243,6 +243,13 @@ larval.selectivity.week <- left_join(effort, larval.diet.env.prop.all) %>%
          week = paste0("Week ", week, ": n=", n))
 
 
+larval.selectivity.threshold <- larval.selectivity.week %>% 
+  filter(mean.E != 0) %>% 
+  group_by(week) %>% 
+  mutate(n.species = n_distinct(species),
+         alpha.threshold = 1/n.species,
+         E.threshold = (1 - (1 / n.species)) / (1 + (1 / n.species)))
+  
 ## -----------------------------------------------------------
 ## abbreviate taxa
 ## -----------------------------------------------------------
@@ -269,7 +276,7 @@ larval.selectivity.week.zero <- larval.selectivity.week %>%
 ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
   geom_bar(stat = "identity") +
   geom_errorbar(aes(ymin = mean.alpha + se.alpha, ymax = mean.alpha - se.alpha), width = 0.5) +
-  geom_hline(yintercept = 0) +
+  geom_hline(data = larval.selectivity.threshold, aes(yintercept = alpha.threshold), linetype = 'dashed') +
   geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.0375), label = "nf", size = 3) +
   scale_y_continuous(limits = c(0,1), expand = c(0, 0))+
   labs(x = "Prey Taxa", y = "Selectivity Index (W')") +
@@ -288,10 +295,12 @@ ggsave("figures/apis_larval_selectivity_weekly.png", dpi = 300, width = 10, heig
 
 ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   geom_bar(stat = "identity") +
-  geom_errorbar(aes(ymin = mean.E + se.E, ymax = mean.E - se.E), width = 0.5) +
+  geom_errorbar(data = filter(larval.selectivity.week, se.E != 0), 
+                aes(ymin = mean.E + se.E, ymax = mean.E - se.E), width = 0.5) +
   geom_hline(yintercept = 0) +
+  geom_hline(data = larval.selectivity.threshold, aes(yintercept = E.threshold), linetype = 'dashed') +
   geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.075), label = "nf", size = 3) +
-  scale_y_continuous(limits = c(-1,1), expand = c(0, 0))+
+  scale_y_continuous(limits = c(-1, 1), expand = c(0, 0))+
   labs(x = "Prey Taxa", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
