@@ -75,8 +75,7 @@ diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thoma
                                   Calanoidae = L.minutus + L.sicilis + Limnocalanus_macrurus + E.lacustrus + Senecella_calanoides + Cal_Copepodite) %>%
   select(-Acanthocyclops, -Diacyclops_thomasi, -Eucyclops, -Cyc_Copepodite,
          -L.minutus, -L.sicilis, -Limnocalanus_macrurus, -E.lacustrus, -Senecella_calanoides, -Cal_Copepodite) %>%
-  gather(species, diet.count, Nauplii:Calanoidae) %>% droplevels() %>% 
-  mutate(diet.count = ifelse(species == "Bythotrephes" & trawl <= 65, 0, diet.count))
+  gather(species, diet.count, Nauplii:Calanoidae) %>% droplevels()
 
 
 ## -----------------------------------------------------------
@@ -242,6 +241,20 @@ larval.selectivity.week <- left_join(effort, larval.diet.env.prop.all) %>%
   mutate(se.alpha = sd.alpha / sqrt(n.trawl),
          se.E = sd.E / sqrt(n.trawl),
          week = paste0("Week ", week, ": n=", n))
+
+
+## -----------------------------------------------------------
+## abbreviate taxa
+## -----------------------------------------------------------
+larval.selectivity.week$species <- gsub('Cyclopidae', 'CY', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Bosmina', 'BO', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Bythotrephes', 'BY', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Daphnia', 'DA', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Diaphanosoma', 'DI', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Calanoidae', 'CA', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Holopedium', 'HO', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week$species)
+
   
 ## -----------------------------------------------------------
 ## Find all weeks and prey that are NA - creates the DF for plotting "nf"
@@ -253,16 +266,24 @@ larval.selectivity.week.zero <- larval.selectivity.week %>%
 ## ===========================================================
 ## Plot Electivity Trends ====================================
 ## ===========================================================
-## E* average by week
-ggplot(larval.selectivity.week, aes(week, mean.E, fill = species))+
-  geom_line(aes(group = species, color = species), size=1.2)+
-  scale_y_continuous(name = "Weekly E average\n",limits = c(-1,1))+
-  labs(color = "Prey Species") +
-  geom_hline(linetype = "dashed", yintercept = 0) +
-  theme_classic() +
-  theme(axis.text=element_text(size=12), 
-        axis.title=element_text(size=12,face="bold"),
-        legend.text=element_text(size=10))
+ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = mean.alpha + se.alpha, ymax = mean.alpha - se.alpha), width = 0.5) +
+  geom_hline(yintercept = 0) +
+  geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.0375), label = "nf", size = 3) +
+  scale_y_continuous(limits = c(0,1), expand = c(0, 0))+
+  labs(x = "Prey Taxa", y = "Selectivity Index (W')") +
+  theme_bw() +
+  theme(panel.grid = element_blank(), panel.background = element_blank(),
+        axis.text.x = element_text(size = 13),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 25, margin = margin(0, 18, 0, 0)),
+        axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
+        axis.ticks.length = unit(2, 'mm'),
+        strip.text = element_text(size = 10)) +
+  facet_wrap(~week, dir = "v", ncol = 3)
+
+ggsave("figures/apis_larval_selectivity_weekly.png", dpi = 300, width = 10, height = 10)
 
 
 ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
@@ -274,7 +295,7 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   labs(x = "Prey Taxa", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
-        axis.text.x = element_text(size = 15, angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_text(size = 13),
         axis.text.y = element_text(size = 15),
         axis.title.y = element_text(size = 25, margin = margin(0, 15, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
