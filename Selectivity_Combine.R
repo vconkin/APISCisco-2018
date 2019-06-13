@@ -30,7 +30,6 @@ library(ggplot2)       # visualizations
 ## ===========================================================
 ## Load in the data ==========================================
 ## ===========================================================
-p.length <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Length_Condition")
 diet.cont <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Mod")[-270,] %>% 
   mutate(trawl = as.integer(Trawl))
 envir.prey <- read.csv("data/Superior_Files/Summaries/Zoop_Summary.csv", header = TRUE) %>% 
@@ -115,7 +114,7 @@ species.list <- unique(c(unique(envir.prey.filtered$species), unique(diet.comp$s
 ## ===========================================================
 ## -----------------------------------------------------------
 ## Group the data by trawl number and species to sum species counts for each trawl
-## IMPORTANT: New DF's number of obs. must match the no. of trawls (66) times the no. of species (16)!
+## IMPORTANT: New DF's number of obs. must match the no. of trawls (80) times the no. of species (8)!
 ## -----------------------------------------------------------
 diet.cont.species <- diet.comp %>% group_by(trawl, species)%>%
   summarize(diet.count.species = sum(diet.count)) %>%
@@ -146,31 +145,17 @@ rm(diet.comp, diet.cont, diet.cont.species, diet.cont.total)
 ## Zooplankton (Environment) Proportion ======================
 ## ===========================================================
 ## -----------------------------------------------------------
-## Create a loop function to add zeros for all prey taxa missing that was found in diet
+## Add zeros for all prey taxa missing in the environment that was found in diet
 ## -----------------------------------------------------------
-## Apply loop function
-envir.prey.missing <-  data.frame(do.call(rbind, lapply(trawl.list, function(i) {
-  envir.prey.trawl <- envir.prey.filtered %>% filter(trawl == i)
-  ## True/false output if prey does not exist (zero value species)
-  pl <- species.list[!species.list %in% envir.prey.trawl$species]
-  ## Determine the number of life stages to be added
-  n <- length(pl)
-  ## Create data frame with all zero value life stages, repeat by 'n'
-  data.frame(trawl = rep(i, n), species = pl, density.l = rep(0, n))
-})))
-
-## -----------------------------------------------------------
-## Combine data and missing taxa
-## -----------------------------------------------------------
-envir.prey.all <- bind_rows(envir.prey.filtered, envir.prey.missing)
-
+envir.prey.all <- envir.prey.filtered %>% 
+  complete(trawl = trawl.list, species = species.list, fill = list(density.l = 0)) 
+  
 ## -----------------------------------------------------------
 ## Group the data by trawl number and species to sum species counts for each trawl
-## IMPORTANT: New DF's number of obs. must match the no. of trawls (66) times the no. of species (16)!
+## IMPORTANT: New DF's number of obs. must match the no. of trawls (80) times the no. of species (8)!
 ## -----------------------------------------------------------
 envir.prey.species <- envir.prey.all %>% group_by(trawl, species)%>%
-  summarize(prey.count.species = sum(density.l)) %>%
-  ungroup()
+  summarize(prey.count.species = sum(density.l)) %>% ungroup()
 
 ## -----------------------------------------------------------
 ## Group by trawl to sum total prey counts for each trawl
@@ -190,7 +175,7 @@ envir.prey.prop <- full_join(envir.prey.species, envir.prey.total) %>%
 ## -----------------------------------------------------------
 ## Clean up environment
 ## -----------------------------------------------------------
-rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.filtered, envir.prey.missing)
+rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.filtered)
 
 
 ## ===========================================================
@@ -231,7 +216,8 @@ larval.selectivity <- left_join(effort, larval.alpha) %>%
 ## ===========================================================
 larval.selectivity.week <- larval.selectivity %>%
   group_by(week, species) %>% 
-  summarize(mean.alpha = mean(alpha), 
+  summarize(n.species = mean(n.species),
+            mean.alpha = mean(alpha), 
             mean.E = mean(E),
             sd.alpha = sd(alpha),
             sd.E = sd(E)) %>% ungroup() %>% 
@@ -243,6 +229,9 @@ larval.selectivity.week <- larval.selectivity %>%
          week = paste0("Week ", week, ": n=", n))
 
 
+## ===========================================================
+## Calculate alpha (preference/avoidance) and E (maximum selection) thresholds
+## ===========================================================
 larval.selectivity.threshold <- larval.selectivity.week %>% 
   filter(mean.E != 0) %>% 
   group_by(week) %>% 
@@ -250,9 +239,9 @@ larval.selectivity.threshold <- larval.selectivity.week %>%
          alpha.threshold = 1/n.species,
          E.threshold = (1 - (1 / n.species)) / (1 + (1 / n.species)))
   
-## -----------------------------------------------------------
-## abbreviate taxa
-## -----------------------------------------------------------
+## ===========================================================
+## Abbreviate taxa names
+## ===========================================================
 larval.selectivity.week$species <- gsub('Cyclopidae', 'CY', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Bosmina', 'BO', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Bythotrephes', 'BY', larval.selectivity.week$species)
@@ -263,16 +252,19 @@ larval.selectivity.week$species <- gsub('Holopedium', 'HO', larval.selectivity.w
 larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week$species)
 
   
-## -----------------------------------------------------------
-## Find all weeks and prey that are NA - creates the DF for plotting "nf"
-## -----------------------------------------------------------
+## ===========================================================
+## Find all weeks and prey that are NA - creates the dataframe for plotting "nf"
+## ===========================================================
 larval.selectivity.week.zero <- larval.selectivity.week %>% 
   filter(mean.E == 0)
 
 
 ## ===========================================================
-## Plot Electivity Trends ====================================
+## Visualization =============================================
 ## ===========================================================
+## -----------------------------------------------------------
+## Plot Electivity  
+## -----------------------------------------------------------
 ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
   geom_bar(stat = "identity") +
   geom_errorbar(aes(ymin = mean.alpha + se.alpha, ymax = mean.alpha - se.alpha), width = 0.5) +
@@ -292,7 +284,9 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species
 
 ggsave("figures/apis_larval_selectivity_weekly.png", dpi = 300, width = 10, height = 10)
 
-
+## -----------------------------------------------------------
+## Plot Slectivity  
+## -----------------------------------------------------------
 ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   geom_bar(stat = "identity") +
   geom_errorbar(data = filter(larval.selectivity.week, se.E != 0), 
