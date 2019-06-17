@@ -25,6 +25,7 @@ library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
 library(tidyr)         # transforming data arrangement (tidy data!!)
 library(ggplot2)       # visualizations
+library(lemon)         # for facet_rep_wrap()
 
 
 ## ===========================================================
@@ -225,20 +226,9 @@ larval.selectivity.week <- larval.selectivity %>%
   complete(week, species = species.list, fill = list(mean.alpha = 0, mean.E = 0, sd.alpha = 0, sd.E = 0)) %>% 
   left_join(diet.sample.size) %>% 
   mutate(se.alpha = sd.alpha / sqrt(n.trawl),
-         se.E = sd.E / sqrt(n.trawl),
-         week = paste0("Week ", week, ": n=", n))
+         se.E = sd.E / sqrt(n.trawl))
 
 
-## ===========================================================
-## Calculate alpha (preference/avoidance) and E (maximum selection) thresholds
-## ===========================================================
-larval.selectivity.threshold <- larval.selectivity.week %>% 
-  filter(mean.E != 0) %>% 
-  group_by(week) %>% 
-  mutate(n.species = n_distinct(species),
-         alpha.threshold = 1/n.species,
-         E.threshold = (1 - (1 / n.species)) / (1 + (1 / n.species)))
-  
 ## ===========================================================
 ## Abbreviate taxa names
 ## ===========================================================
@@ -251,7 +241,39 @@ larval.selectivity.week$species <- gsub('Calanoidae', 'CA', larval.selectivity.w
 larval.selectivity.week$species <- gsub('Holopedium', 'HO', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week$species)
 
-  
+
+## ===========================================================
+## Expand week numbers to date ranges
+## ===========================================================
+larval.selectivity.week$week <- gsub('23', 'June 4-5', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('20', 'May 14-15', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('25', 'June 18-20', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('30', 'July 23-25', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('21', 'May 21-23', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('29', 'July 16-17', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('22', 'May 29', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('24', 'June 12-13', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('27', 'July 2-5', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('28', 'July 9-11', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('26', 'June 26-28', larval.selectivity.week$week)
+
+larval.selectivity.week %<>% mutate(week = factor(week, levels = c('May 14-15', 'May 21-23', 'May 29','June 4-5', 
+                                                             'June 12-13', 'June 18-20','June 26-28', 'July 2-5',
+                                                             'July 9-11','July 16-17', 'July 23-25'),
+                                            ordered = TRUE))
+
+
+## ===========================================================
+## Calculate alpha (preference/avoidance) and E (maximum selection) thresholds
+## ===========================================================
+larval.selectivity.threshold <- larval.selectivity.week %>% 
+  filter(mean.E != 0) %>% 
+  group_by(week) %>% 
+  mutate(n.species = n_distinct(species),
+         alpha.threshold = 1/n.species,
+         E.threshold = (1 - (1 / n.species)) / (1 + (1 / n.species)))
+
+
 ## ===========================================================
 ## Find all weeks and prey that are NA - creates the dataframe for plotting "nf"
 ## ===========================================================
@@ -272,15 +294,16 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species
   geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.0375), label = "nf", size = 3) +
   scale_y_continuous(limits = c(0,1), expand = c(0, 0))+
   labs(x = "Prey Taxa", y = "Selectivity Index (W')") +
-  theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
+        axis.line = element_line(),
         axis.text.x = element_text(size = 13),
         axis.text.y = element_text(size = 15),
         axis.title.y = element_text(size = 25, margin = margin(0, 18, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
         axis.ticks.length = unit(2, 'mm'),
-        strip.text = element_text(size = 10)) +
-  facet_wrap(~week, dir = "v", ncol = 3)
+        strip.text = element_text(size = 10),
+        strip.background = element_blank()) +
+  facet_rep_wrap(~week, dir = "v", ncol = 3)
 
 ggsave("figures/apis_larval_selectivity_weekly.png", dpi = 300, width = 10, height = 10)
 
@@ -296,15 +319,16 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.075), label = "nf", size = 3) +
   scale_y_continuous(limits = c(-1, 1), expand = c(0, 0))+
   labs(x = "Prey Taxa", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
-  theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
+        axis.line = element_line(),
         axis.text.x = element_text(size = 13),
         axis.text.y = element_text(size = 15),
         axis.title.y = element_text(size = 25, margin = margin(0, 15, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
         axis.ticks.length = unit(2, 'mm'),
-        strip.text = element_text(size = 10)) +
-  facet_wrap(~week, dir = "v", ncol = 3)
+        strip.text = element_text(size = 10),
+        strip.background = element_blank()) +
+  facet_rep_wrap(~week, dir = "v", ncol = 3)
 
 ggsave("figures/apis_larval_electivity_weekly.png", dpi = 300, width = 10, height = 10)
 
