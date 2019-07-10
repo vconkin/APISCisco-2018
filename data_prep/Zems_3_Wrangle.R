@@ -206,6 +206,6 @@ zoop.summary %<>% mutate(n.counted = replace_na(n.counted, 0),
 
 ## SAVE SUMMARY FILE ============================================
 
-write.csv(zoop.summary, "data/APIS_Zoop_Summary.csv", row.names = F)
+write.csv(zoop.summary, "data/Superior_Files/Summaries/APIS_Zoop_Summary.csv", row.names = F)
 
 ## ---------------------------END--------------------------------
