@@ -34,27 +34,23 @@ library(lemon)         # for facet_rep_wrap()
 ## LOAD DATA ====================================================
 
 ## Length and yolk-sac condition
-larval.tl <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Length_Condition") %>% 
-  filter(Include == "Y") %>% 
-  mutate(Trawl = factor(Trawl),
-         Week = factor(Week),
-         TLength_mm = as.numeric(TLength_mm)) %>% 
-  dplyr::select(trawl = Trawl, serial = Serial, week = Week, fish.id = Label, tl.mm = TLength_mm, tl.bin = Length_Bin, 
-         yolk.cond = Yolk_Sac_Cond)
+larval.tl <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Length_Yolk") %>% 
+  filter(include == "Y") %>% 
+  mutate(trawl = factor(trawl),
+         week = factor(week)) %>% 
+  dplyr::select(trawl, serial, week, loc.bin.id, tl.mm, tl.bin, yolk.cond)
 
 ## Larval diet
-larval.diet <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Mod") %>% 
-  mutate(Trawl = factor(Trawl),
-         tl.bin = gsub('-', '', substr(Label, 7, length(Label))),
-         tl.bin = as.numeric(gsub('mm', '', tl.bin))) %>%
-  dplyr::select(trawl = Trawl, tl.bin, loc.bin.id = Label, n.fish = InBin, n.diet = WithFood, diet.count = Total_food_items) %>% 
+larval.diet <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet") %>% 
+  mutate(trawl = factor(trawl)) %>%
+  dplyr::select(trawl, tl.bin, loc.bin.id, n.fish, n.diet, diet.count) %>% 
   mutate(mean.diet.count = diet.count/n.diet,
          mean.diet.count = ifelse(mean.diet.count == "NaN", 0, mean.diet.count),
          trawl = factor(ifelse(trawl == "37.1", "37", trawl)))
 
 ## Tow effort (to match trawl numbers with week)
-effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE) %>% 
-  dplyr::select(trawl = Trawl, week = Week) %>% 
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+  dplyr::select(trawl, week) %>% 
   mutate(trawl = factor(trawl))
 
 

@@ -31,13 +31,10 @@ library(lemon)         # for facet_rep_wrap()
 ## ===========================================================
 ## Load in the data ==========================================
 ## ===========================================================
-diet.cont <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Mod")[-270,] %>% 
-  mutate(trawl = as.integer(Trawl))
-envir.prey <- read.csv("data/Superior_Files/Summaries/Zoop_Summary.csv", header = TRUE) %>% 
-  mutate(density.l = as.numeric(density.l),
-         species = as.character(species)) %>% droplevels()
-effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE) %>% 
-  select(trawl = Trawl, week = Week)
+diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
+envir.prey <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Zoop Biomass-Density")
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+  select(trawl, week)
 
 
 ## ===========================================================
@@ -48,7 +45,7 @@ effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE) %>%
 ## -----------------------------------------------------------
 diet.sample.size <- left_join(diet.cont, effort) %>% 
   group_by(week) %>% 
-  summarize(n = sum(InBin),
+  summarize(n = sum(n.fish),
             n.trawl = n_distinct(trawl))
 
 ## -----------------------------------------------------------

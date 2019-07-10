@@ -26,13 +26,10 @@ library(lemon)         # for facet_rep_wrap()
 ## ===========================================================
 ## Load in the data ==========================================
 ## ===========================================================
-larval.tl <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Length_Condition") %>% 
-  filter(Include == "Y") %>% 
-  mutate(Trawl = factor(Trawl),
-         Week = factor(Week),
-         TLength_mm = as.numeric(TLength_mm)) %>% 
-  select(trawl = Trawl, serial = Serial, week = Week, fish.id = Label, tl.mm = TLength_mm, tl.bin = Length_Bin, 
-         yolk.cond = Yolk_Sac_Cond)
+larval.tl <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Length_Yolk") %>% 
+  filter(include == "Y") %>% 
+  mutate(tl.mm = as.numeric(tl.mm)) %>% 
+  select(trawl, serial, week, loc.bin.id, tl.mm, tl.bin, yolk.cond)
 
 
 ## ===========================================================
@@ -56,7 +53,6 @@ larval.yolk.freq <- larval.tl %>% group_by(tl.bin, yolk.cond) %>%
 ## Rename yolk-sac conditions
 ## ===========================================================
 larval.yolk.freq$yolk.cond <- gsub("Yolk sac and globule", "Yolk Sac Present", larval.yolk.freq$yolk.cond)
-larval.yolk.freq$yolk.cond <- gsub('Absorbed', 'Absorbed', larval.yolk.freq$yolk.cond)
 larval.yolk.freq$yolk.cond <- gsub('Oil globule only', 'Oil Globule Only', larval.yolk.freq$yolk.cond)
 
 larval.yolk.freq %<>% mutate(yolk.cond = factor(yolk.cond, ordered = TRUE, levels = c('Yolk Sac Present', 'Oil Globule Only', 'Absorbed')))

@@ -1,6 +1,6 @@
 ### Apostle Islands Cisco workflow
 
-The overall goal of the workflow is to synthesize the data from the field (effort information including trawl, date/time, distances, volume filtered, etc.), lab processing (yolk condition, lengths, stomach contents), and zems analysis (zooplankton counts and lengths). These form two branches, fish and zooplankton, that ultimately are combined to calculate selectivity values.  Each piece is laid out here as I worked through them:
+The overall goal of the workflow is to synthesize the data from the field (effort information including trawl, date/time, distances, volume filtered, etc.), lab processing (yolk condition, lengths, stomach contents), and zems analysis (zooplankton counts and lengths). These form two branches, fish and zooplankton, that ultimately are combined to calculate selectivity values.  Each piece is laid out here:
 
 1. Fish Data Flow:  [Field Data](#Field-Data) —> [Stomach Data](#Stomach-Data) —> [Historical Data](#1974-Historical-Data)
 
@@ -18,7 +18,7 @@ File name: AI_Coregonus_Copy
 
 Files in path: APIS_Coregonus_2018.xlsx
 
-Description: This file takes compiles and visualizes all the data from the field sampling. Original was written by Mark Vinson, I expanded and tweaked the plots. The script primarily explores length trends using Ashland lengths, as well as abundance and distribution across weeks, islands, and island groups.
+Description: This file takes compiles and visualizes all the data from the field sampling. The script primarily explores length trends using USGS Lake Superior Biological Station lengths, as well as abundance and distribution across weeks, islands, and island groups.
 
  
 

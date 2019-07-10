@@ -9,8 +9,7 @@
 ##  You need the following files in your project folder:
 ##    "All_Samples.csv"
 ##    "Bytho_Samples.csv"
-##    "APIS_Effort_Cut.csv" 
-##    "Zoop_Effort_Cut.csv"
+##    "APIS_Coregonus_2018.xlsx" 
 ##
 ##  The following output tables will be created and save in your 
 ##    project folder:
@@ -41,36 +40,36 @@ bytho.samples <- read.csv("data/Superior_Files/Summaries/Bytho_Samples.csv", hea
 
 ## Load fish and zooplankton effort data files
 ##  These files are trimmed down to include only neccessary variables
-effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE)
-zoop <- read.csv("data/Superior_Files/Zoop_Effort_Cut.csv", header = TRUE)
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+  select(trawl, date, week, j.day, station, group, serial.in, serial.out)
+zoop <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Zoop Effort") %>% 
+  select(trawl, volume.l)
 
 
 ## JOIN LENGTH AND EFFORT DATA ============================== 
 
 ## Zooplankton
 ## samples with trawl effort
-zoop.length <- left_join(all.samples, effort, by = c("subSampleID" = "SerialIn")) %>% 
+zoop.length <- left_join(all.samples, effort, by = c("subSampleID" = "serial.in")) %>% 
   rename(serial = subSampleID)
 
 ## trawl effort samples with zoop effort
-zoop.length <- left_join(zoop.length, zoop) %>% 
-  rename(trawl = Trawl)
+zoop.length <- left_join(zoop.length, zoop)
 
 ## Bythotrephes
 ## samples with trawl effort
-bytho.length <- left_join(bytho.samples, effort, by = c("subSampleID" = "SerialIn")) %>% 
+bytho.length <- left_join(bytho.samples, effort, by = c("subSampleID" = "serial.in")) %>% 
   rename(serial = subSampleID)
 
 ## trawl effort samples with zoop effort
-bytho.length <- left_join(bytho.length, zoop) %>% 
-  rename(trawl = Trawl)
+bytho.length <- left_join(bytho.length, zoop)
 
 ## Combine zoop and bytho length data (ignore coercing warning)
 all.lengths <- bind_rows(zoop.length, bytho.length) %>% 
-  select(serial, trawl:Group, subSampleExpansionCoef:length, Volume_L)
+  select(serial, trawl:group, subSampleExpansionCoef:length, volume.l)
 
 ## Change date format into something R likes (YYYY-MM-DD)
-all.lengths %<>% mutate(Date = as.POSIXct(Date, format = "%m/%d/%Y"))
+all.lengths %<>% mutate(date = as.POSIXct(date, format = "%m/%d/%Y"))
 
 
 ## DATA MANIPULATION ============================================
@@ -93,17 +92,17 @@ sample.long %<>% gather(species, total, Acanthocyclops:Nauplii) %>%
 ##  Only 10 tows were found with bythos present. 
 ##  We need to create zeros for all trawls were a zooplankton tow 
 ##  was done (every day except July 24).
-bytho.long <- full_join(bytho.samples, effort, by = c("subSampleID" = "SerialIn")) %>% 
-  rename("Serial" = "subSampleID") %>% 
-  filter(Date != "7/24/2018") %>% 
+bytho.long <- full_join(bytho.samples, effort, by = c("subSampleID" = "serial.in")) %>% 
+  rename(serial = subSampleID) %>% 
+  filter(date != "2018-07-24") %>% 
   mutate(species = "Bythotrephes")
 
 ## Join with zooplankton effort and summarize by serial
 bytho.long <- left_join(bytho.long, zoop) %>%
-  group_by(Serial, species) %>%
+  group_by(serial, species) %>%
   summarize(ex.coef = mean(subSampleExpansionCoef), 
             total = sum(organismCount)) %>%
-  select(serial = Serial, species, ex.coef, total)
+  select(serial, species, ex.coef, total)
 
 ## Convert NA to zero for all columns 
 bytho.long[is.na(bytho.long)] <- 0
@@ -113,23 +112,21 @@ bytho.long[is.na(bytho.long)] <- 0
 
 ## Zooplankton
 ## samples with trawl effort
-zoop.trawl <- left_join(sample.long, effort, by = c("serial" = "SerialIn"))
+zoop.trawl <- left_join(sample.long, effort, by = c("serial" = "serial.in"))
 
 ## trawl effort samples with zoop effort
-zoop.trawl <- left_join(zoop.trawl, zoop) %>% 
-  rename(trawl = Trawl)
+zoop.trawl <- left_join(zoop.trawl, zoop)
 
 ## Bythotrephes
 ## samples with trawl effort
-bytho.trawl <- left_join(bytho.long, effort, by = c("serial" = "SerialIn"))
+bytho.trawl <- left_join(bytho.long, effort, by = c("serial" = "serial.in"))
 
 ## trawl effort samples with zoop effort
-bytho.trawl <- left_join(bytho.trawl, zoop) %>% 
-  rename(trawl = Trawl)
+bytho.trawl <- left_join(bytho.trawl, zoop)
 
 ## Combine zoop and bytho length data (ignore coercing warning)
 all.trawl <- bind_rows(zoop.trawl, bytho.trawl) %>% 
-  select(serial:Group, Volume_L)
+  select(serial:group, volume.l)
 
 
 ## CALCULATE DENSITY ============================================
@@ -137,7 +134,7 @@ all.trawl <- bind_rows(zoop.trawl, bytho.trawl) %>%
 zoop.density <- all.trawl %>% group_by(trawl, species) %>%
   mutate(n.counted  = sum(total),
          n.jar   = n.counted * ex.coef,
-         density.l   = n.jar / Volume_L)
+         density.l   = n.jar / volume.l)
 
 
 ## CALCULATE INDIVIDUAL DRY WEIGHT ==============================
@@ -179,8 +176,8 @@ zoop.summary %<>% complete(trawl, species = unique(.$species))
 
 ## Assign taxa group names to each species
 species.group <- zoop.lw %>% 
-  distinct(species, Group.y) %>% 
-  rename(taxa.group = Group.y)
+  distinct(species, Group) %>% 
+  rename(taxa.group = Group)
 
 ## Add taxa group names for each species for later binning if necessary, 
 ##  and then selects subset of data that does not include effort data (which will be added later)
@@ -192,9 +189,9 @@ zoop.summary <- left_join(zoop.summary, species.group) %>%
 zoop.summary %<>% mutate(biomass.dry.wt.ugL = density.l * mean.indiv.dry.wt.ug)
 
 ## Add in the effort data
-zoop.summary <- left_join(zoop.summary, effort, by = c("trawl" = "Trawl")) %>% 
-  select(trawl, serial = "SerialIn", date = "Date", week = "Week", j.day = "Jday", station = "Station", group = "Group", 
-         species, taxa.group, n.counted, n.jar, density.l, n.measured, mean.indiv.dry.wt.ug, 
+zoop.summary <- left_join(zoop.summary, effort) %>% 
+  select(trawl, serial = serial.in, date, week, j.day, station, group, species, taxa.group, 
+         n.counted, n.jar, density.l, n.measured, mean.indiv.dry.wt.ug, 
          sd.indiv.dry.wt.ug, mean.indiv.length.mm, sd.indiv.length.mm, biomass.dry.wt.ugL)
 
 ## Add in 0s for taxa that were not found in each sample
@@ -209,6 +206,6 @@ zoop.summary %<>% mutate(n.counted = replace_na(n.counted, 0),
 
 ## SAVE SUMMARY FILE ============================================
 
-write.csv(zoop.summary, "data/Superior_Files/Summaries/Zoop_Summary.csv", row.names = F)
+write.csv(zoop.summary, "data/APIS_Zoop_Summary.csv", row.names = F)
 
 ## ---------------------------END--------------------------------
