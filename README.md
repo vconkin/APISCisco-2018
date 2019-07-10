@@ -1,4 +1,4 @@
-APIS Coregonine
+APIS Larval Coregonine
 ==========
 
 This repository contains data files, analysis scripts, and manuscript figures for *manuscript title* by ...authors... that has been accepted for publication in ...journal name...
