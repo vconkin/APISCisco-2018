@@ -13,14 +13,14 @@ rm(list = ls(all.names=TRUE))
 
 ## LOAD PACKAGES ================================================
 
-library(readxl)        # reading Excel data
 library(dplyr)         # manipulating data
+library(magrittr)      # for %<>%
 library(ggplot2)       # visualizations
 
 
 ## LOAD DATA ====================================================
 
-zoop <- read_excel("data/APIS_Zooplankton_2018.xlsx", sheet = "Zoop Biomass-Density") 
+zoop <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
 
 
 
