@@ -60,7 +60,7 @@ diet.cont %<>% select(trawl, Nauplii:Chironomid_pupae) %>%
          "Bosmina" = "Bosmina_sp.") %>% 
   ## Remove non-whole organisms
   select(-"Unknown_Fragment_Calanoid", -"Unknown_Fragment_Cyclopoid", -"Invertebrate_eggs", 
-         -"Chironomid_pupae", -"Rotifera", -"Leptodora_kindi")
+         -"Chironomid_pupae", -"Rotifera")
 
 ## -----------------------------------------------------------
 ## Make all NAs (blanks) zero
