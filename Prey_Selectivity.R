@@ -32,7 +32,7 @@ library(lemon)         # for facet_rep_wrap()
 ## Load in the data ==========================================
 ## ===========================================================
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
-envir.prey <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Zoop Biomass-Density")
+envir.prey <- read_excel("data/APIS_Zooplankton_2018.xlsx", sheet = "Zoop Biomass-Density")
 effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
   select(trawl, week)
 

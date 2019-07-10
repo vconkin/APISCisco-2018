@@ -1,75 +1,97 @@
-rm(list=ls(all=TRUE)) #wipes your R workspace clean.
+#################################################################
+##  
+##  APIS Cisco (Lucke et al.) manuscript
+##  
+##  
+##      
+#################################################################
 
-library(plyr)
-library(dplyr)
-library(ggplot2)
-library(ggridges)
-library(ggpubr)
+## CLEAR ENVIRONMENT ============================================
+
+rm(list = ls(all.names=TRUE))
 
 
-data = read.csv("data/Superior_Files/Summaries/Zoop_Summary.csv", header=TRUE)
+## LOAD PACKAGES ================================================
 
-# R is pretty picky about date format.
-# It recognizes excel default date format as factor and not Date.
-# Need to change the date foramt to YYYY-MM-DD using:
-data$Date=as.Date(data$Date,"%m/%d/%Y")
+library(readxl)        # reading Excel data
+library(dplyr)         # manipulating data
+library(ggplot2)       # visualizations
 
-newdata<-data
 
-newdata$Taxa_Group2 = case_when(newdata$species == "Acanthocyclops" ~ "Cyclopoids",
-  newdata$species == "Bosmina" ~ "Other_Cladocera",
-  newdata$species == "Bythotrephes" ~ "Bythotrephes",
-  newdata$species == "Daphnia" ~ "Daphnia",
-  newdata$species == "Diacyclops" ~ "Cyclopoids",
-  newdata$species == "Diaphanosoma" ~ "Other_Cladocera",
-  newdata$species == "Epischura" ~ "Calanoids",
-  newdata$species == "Holopedium" ~ "Other_Cladocera",
-  newdata$species == "Limnocalanus" ~ "Calanoids",
-  newdata$species == "Leptodiaptomus" ~ "Calanoids",
-  newdata$species == "Mesocyclops" ~ "Cyclopoids",
-  newdata$species == "Nauplii" ~ "Nauplii",
-)
+## LOAD DATA ====================================================
 
-newdata$Taxa_Group2 <- as.factor(newdata$Taxa_Group2)
+zoop <- read_excel("data/APIS_Zooplankton_2018.xlsx", sheet = "Zoop Biomass-Density") 
 
-weekly_data <- newdata %>% group_by(Week, Station, Taxa_Group2) %>%
-  summarize(Sum_Density = sum(Density_L), Sum_Biomass = sum(BiomassDW_ugL)) %>% 
-  group_by(Week, Taxa_Group2) %>% 
-  summarize(Mean_Density = mean(Sum_Density), Mean_Biomass = mean(Sum_Biomass)) 
 
-####PLOT MEAN DENSITY####
-ggplot(weekly_data, aes(x = Week, y = Mean_Density)) +
+
+## DATA MANIPULATION ============================================
+
+zoop %<>% mutate(taxa.group.2 = ifelse(species == "Acanthocyclops", "  Cyclopoids",
+                                ifelse(species == "Bosmina", "  Other Cladocera",
+                                ifelse(species == "Bythotrephes", "  Bythotrephes",
+                                ifelse(species == "Daphnia", "  Daphnia",
+                                ifelse(species == "Diacyclops", "  Cyclopoids",
+                                ifelse(species == "Diaphanosoma", "  Other Cladocera",
+                                ifelse(species == "Epischura", "  Calanoids",
+                                ifelse(species == "Holopedium", "  Other Cladocera",
+                                ifelse(species == "Limnocalanus", "  Calanoids",
+                                ifelse(species == "Leptodiaptomus", "  Calanoids",
+                                ifelse(species == "Mesocyclops", "  Cyclopoids",
+                                ifelse(species == "Nauplii", "  Nauplii", "")))))))))))),
+                 tax.group.2 = factor(taxa.group.2))
+  
+
+## Summarize weekly and weekly proporational density and biomass for each taxa group
+weekly.data <- zoop %>% group_by(week, station, taxa.group.2) %>%
+  summarize(sum.density = sum(density.l), 
+            sum.biomass = sum(biomass.dry.wt.ugL)) %>% 
+  group_by(week, taxa.group.2) %>% 
+  summarize(mean.density = mean(sum.density), 
+            mean.biomass = mean(sum.biomass)) %>% 
+  group_by(week) %>% 
+  mutate(sum.density = sum(mean.density), 
+         sum.biomass = sum(mean.biomass),
+         prop.density = mean.density/sum.density,
+         prop.biomass = mean.biomass/sum.biomass)
+
+
+## VISUALIZATION ================================================
+
+## Mean density
+ggplot(weekly.data, aes(x = week, y = mean.density)) +
   geom_point(size = 1.5) +
-  geom_line(aes(linetype = Taxa_Group2, colour = Taxa_Group2), size = 0.85) +
+  geom_line(aes(linetype = taxa.group.2, colour = taxa.group.2), size = 0.85) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  labs(x = 'Week', y = 'Mean Density (#/L)') +
+  theme_bw() + 
+  theme(panel.grid = element_blank(), panel.background = element_blank(), 
+        legend.title = element_blank(),
+        legend.text = element_text(size=10),
+        legend.key.size = unit(0.75, 'cm'),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
+        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
+        axis.ticks.length = unit(1.0, 'mm'), 
+        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+
+## Save figure
+ggsave("figures/apis_zoop_density.png", width = 12, height = 8, dpi = 300)
+
+
+## Mean biomass
+ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
+  geom_point(size = 1.5) +
+  geom_line(aes(linetype = taxa.group.2, colour = taxa.group.2), size = 0.85) +
   scale_y_continuous(limits = c(0, 4), expand = c(0, 0)) +
-  scale_x_continuous(limits = c(19.5, 30.5), breaks = seq(20, 30, 1), expand = c(0, 0))+
-  
-labs(x = 'Week', y = 'Mean density (#/L)') +
-theme_bw() + 
-  theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title=element_blank(),
-        legend.text =element_text(size=10),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
-
-
-
-#PLOT MEAN BIOMASS####
-ggplot(weekly_data, aes(x = Week, y = Mean_Biomass)) +
-  geom_point(size = 1.5) +
-  geom_line(aes(linetype = Taxa_Group2, colour = Taxa_Group2), size = 0.85) +
-  scale_y_continuous(limits = c(0, 4), expand = c(0, 0)) +
-  scale_x_continuous(limits = c(19.5, 30.5), breaks = seq(20, 30, 1), expand = c(0, 0))+
-        
-  labs(x = 'Week', y = 'Mean biomass (ug dry/L)') +
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  labs(x = 'Week', y = 'Mean Biomass (ug dry/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title=element_blank(),
-        legend.text =element_text(size=10),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.75, 'cm'),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
@@ -77,32 +99,43 @@ ggplot(weekly_data, aes(x = Week, y = Mean_Biomass)) +
         axis.ticks.length = unit(1.0, 'mm'), 
         plot.margin = unit(c(5, 5, 5, 5), 'mm'))
 
+## Save figure
+ggsave("figures/apis_zoop_biomass.png", width = 12, height = 8, dpi = 300)
 
-#PLOT PROPORTIONAL STACKED AREA PLOT OF DENSITY####
-ggplot(weekly_data, aes(x = Week, y = Mean_Density, fill = as.factor(Taxa_Group2))) +
-  geom_area(stat = "identity", position = "fill") + 
-  scale_x_continuous(limits = c(19.5, 30.5), breaks = seq(20, 30, 1), expand = c(0, 0)) +
-  labs(x = 'Week', y = 'Proportional density') +
+
+## Proportional stacked area plot of density
+ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
+  geom_area(position = "fill", color = "black") + 
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(x = 'Week', y = 'Proportional Density') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title=element_blank(),
-        legend.text =element_text(size=10),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.75, 'cm'),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(1.0, 'mm'), 
         plot.margin = unit(c(5, 5, 5, 5), 'mm'))
-  
-#PLOT PROPORTIONAL STACKED AREA PLOT OF BIOMASS####
-ggplot(weekly_data, aes(x = Week, y = Mean_Biomass, fill = as.factor(Taxa_Group2))) +
-  geom_area(stat = "identity", position = "fill") + 
-  scale_x_continuous(limits = c(19.5, 30.5), breaks = seq(20, 30, 1), expand = c(0, 0)) +
-  labs(x = 'Week', y = 'Proportional biomass') +
+
+## Save figure
+ggsave("figures/apis_zoop_propDensity.png", width = 12, height = 8, dpi = 300)
+
+
+## Proportional stacked area plot of biomass
+ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
+  geom_area(stat = "identity", position = "fill", color = "black") + 
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(x = 'Week', y = 'Proportional Biomass') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title=element_blank(),
-        legend.text =element_text(size=10),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.75, 'cm'),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
@@ -110,30 +143,6 @@ ggplot(weekly_data, aes(x = Week, y = Mean_Biomass, fill = as.factor(Taxa_Group2
         axis.ticks.length = unit(1.0, 'mm'), 
         plot.margin = unit(c(5, 5, 5, 5), 'mm'))
 
-
-
-####PLOT MEAN DENSITY ON LOG10 Y SCALE####
-
-#convert 0s to low value for plotting on log scale
-logplot_weekly_data <- weekly_data %>% 
-  mutate(Mean_Density = ifelse(Mean_Density == 0, 0.00001, Mean_Density))  %>% 
-  mutate(Mean_Biomass = ifelse(Mean_Biomass == 0,0.0001,Mean_Biomass))
-
-ggplot(logplot_weekly_data, aes(x = Week, y = Mean_Density)) +
-  geom_point(size = 1.5) +
-  geom_line(aes(linetype = Taxa_Group2, colour = Taxa_Group2), size = 0.85) +
-  scale_y_continuous(limits = c(0.00001, 5), trans = "log10", minor_breaks = waiver(), expand = c(0, 0)) +
-  scale_x_continuous(limits = c(19.5, 30.5), breaks = seq(20, 30, 1), expand = c(0, 0))+
-  
-  labs(x = 'Week', y = 'Mean density (#/L)') +
-  theme_bw() + 
-  theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title=element_blank(),
-        legend.text =element_text(size=10),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+## Save figure
+ggsave("figures/apis_zoop_propBiomass.png", width = 12, height = 8, dpi = 300)
 
