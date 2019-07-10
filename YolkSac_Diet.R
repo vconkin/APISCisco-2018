@@ -1,24 +1,28 @@
-##############################################################
-##############################################################
+#################################################################
 ##  
 ##  APIS Cisco (Lucke et al.) manuscript
 ##  
 ##  
-##  Problems:
-##  - No individual diet data. No direct comparison between fish that were examined for diet content and measured.
-##  - If multiple yolk sac conditions are present within each length bin, you cannot use because no individual data
+##  This file combines larval diet and larval length and yolk-sac conditions.
+##  Script calculates the probabilty of four yolk sac (y/n) - diet (y/n) combinations
+##    within each length bin. Weekly data was pooled to increase sample sizes.
+##  
+##  Data Limitations:
+##  - No individual diet data. Negates direct comparison between fish 
+##     that were examined for diet content and measured.
+##  - If multiple yolk-sac conditions are present within each 
+##     trawl and length bin, data needs to be removed because no individual 
+##     diet data or fish IDs were recorded
 ## 
-##############################################################
-##############################################################
-## ===========================================================
-## Clear the environment first ===============================
-## ===========================================================
+#################################################################
+
+## CLEAR ENVIRONMENT ============================================
+
 rm(list = ls(all.names=TRUE))
 
 
-## ===========================================================
-## Load Packages =============================================
-## ===========================================================
+## LOAD PACKAGES ================================================
+
 library(readxl)        # reading Excel data
 library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
@@ -27,114 +31,148 @@ library(ggplot2)       # visualizations
 library(lemon)         # for facet_rep_wrap()
 
 
-## ===========================================================
-## Load in the data ==========================================
-## ===========================================================
+## LOAD DATA ====================================================
+
+## Length and yolk-sac condition
 larval.tl <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Length_Condition") %>% 
   filter(Include == "Y") %>% 
   mutate(Trawl = factor(Trawl),
          Week = factor(Week),
          TLength_mm = as.numeric(TLength_mm)) %>% 
-  select(trawl = Trawl, serial = Serial, week = Week, fish.id = Label, tl.mm = TLength_mm, tl.bin = Length_Bin, 
+  dplyr::select(trawl = Trawl, serial = Serial, week = Week, fish.id = Label, tl.mm = TLength_mm, tl.bin = Length_Bin, 
          yolk.cond = Yolk_Sac_Cond)
 
-larval.diet <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Contents")[-265,] %>% 
+## Larval diet
+larval.diet <- read_excel("data/Larval_Coregonus_Processing.xlsx", sheet = "Stomach_Mod") %>% 
   mutate(Trawl = factor(Trawl),
          tl.bin = gsub('-', '', substr(Label, 7, length(Label))),
          tl.bin = as.numeric(gsub('mm', '', tl.bin))) %>%
-  select(trawl = Trawl, tl.bin, loc.bin.id = Label, n.fish = InBin, n.diet = WithFood, diet.count = Total_food_items) %>% 
+  dplyr::select(trawl = Trawl, tl.bin, loc.bin.id = Label, n.fish = InBin, n.diet = WithFood, diet.count = Total_food_items) %>% 
   mutate(mean.diet.count = diet.count/n.diet,
-         mean.diet.count = ifelse(mean.diet.count == "NaN", 0, mean.diet.count))
+         mean.diet.count = ifelse(mean.diet.count == "NaN", 0, mean.diet.count),
+         trawl = factor(ifelse(trawl == "37.1", "37", trawl)))
+
+## Tow effort (to match trawl numbers with week)
+effort <- read.csv("data/Superior_Files/APIS_Effort_Cut.csv", header = TRUE) %>% 
+  dplyr::select(trawl = Trawl, week = Week) %>% 
+  mutate(trawl = factor(trawl))
 
 
-## ===========================================================
-## Calculate the mean total length for each trawl ============
-## ===========================================================
+## DIET DATA MANIPULATION =======================================
+
+## Loop to expand number of fish;
+##  Takes the recorded number of fish "n.fish" from the diet data and 
+##  creates a row for each fish (no. of rows = "n.fish").
+##  Assigns if food was present or not based on "n.diet" or "n.fish - n.diet".
+## 
+## IMPORTANT: No. of observations MUST match ourput from sum(larval.diet$n.fish)
+larval.diet.full <- do.call(rbind, lapply(1:nrow(larval.diet), function(i) {
+  tmp <- larval.diet[i,]
+  
+  n.rows <- tmp$n.fish
+  n.diet.present <- tmp$n.diet
+  n.diet.absent <- n.rows - n.diet.present
+  
+  df <- data.frame(trawl = factor(rep(tmp$trawl, n.rows)), tl.bin = rep(tmp$tl.bin, n.rows),
+                   loc.bin.id = rep(tmp$loc.bin.id, n.rows), diet.logical = c(rep("Food Present", n.diet.present), rep("Food Absent", n.diet.absent)))
+}))
+
+
+## LENGTH/YOLK DATA MANIPULATION ================================
+
+## Calculate the mean total length for each trawl
 larval.tl.summary <- larval.tl %>% group_by(trawl, tl.bin, yolk.cond) %>% 
-  summarize(n.tl = n(),
-            mean.tl = mean(tl.mm)) %>% ungroup() %>% 
+  summarize(n.tl = n()) %>% ungroup() %>% 
   mutate(trawl.bin = paste0(trawl, "-", tl.bin))
 
-## -----------------------------------------------------------
-## Find the length bins that have more than one yolk-sac condition and remove from analysis
-## -----------------------------------------------------------
+## Find the length bins that have more than one yolk-sac condition 
+##  and remove from analysis. Convert to a vector for filtering.
 larval.tl.yolk <- larval.tl.summary %>% group_by(trawl.bin) %>% 
   summarize(nrows = n()) %>%
   filter(nrows == 1) %>% 
-  ## convert to a vector
   pull(trawl.bin)
 
 ## Filter by trawl-bin vector (only length bins that have a single yolk-sac condition)
-larval.tl.summary <- larval.tl.summary %>% filter(trawl.bin %in% c(larval.tl.yolk))
+larval.tl.summary %<>% filter(trawl.bin %in% c(larval.tl.yolk))
 
 
-## ===========================================================
-## Join length/yolk and diet data ============================
-## ===========================================================
-larval.yolk.diet <- left_join(larval.diet, larval.tl.summary) %>% 
+## LENGTH/YOLK AND DIET DATA MANIPULATION =======================
+
+## Join, remove NAs, and calculate n for each length bin
+larval.yolk.diet <- left_join(larval.diet.full, larval.tl.summary) %>% 
   filter(!is.na(yolk.cond)) %>% 
-  mutate(yolk.cond = factor(yolk.cond))
+  mutate(trawl = factor(trawl),
+         diet.logical = factor(diet.logical)) %>% 
+  group_by(tl.bin) %>% 
+  mutate(n.tl = n())
+  ## Sample size decreases from 623 to 163 individuals :(
 
 
-## ===========================================================
-## Fit model (mean.diet.count ~ tl.bin + yolk.cond)
-## ===========================================================
-lm_yolk <- lm(mean.diet.count ~ tl.bin * yolk.cond, data = larval.yolk.diet)
-summary(lm_yolk)
+## Rename yolk-sac conditions and combine oil globule,
+##  convert to a ordered factor, and create a combined group variable
+larval.yolk.diet$yolk.cond <- gsub("Yolk sac and globule", "Yolk Sac", larval.yolk.diet$yolk.cond)
+larval.yolk.diet$yolk.cond <- gsub('Oil globule only', 'Yolk Sac', larval.yolk.diet$yolk.cond)
+larval.yolk.diet %<>% mutate(yolk.cond = factor(yolk.cond, ordered = TRUE, levels = c('Yolk Sac', 'Absorbed'))) %>% 
+  left_join(effort) %>% 
+  dplyr::select(-trawl, -loc.bin.id, -trawl.bin) %>% 
+  mutate(group = factor(interaction(yolk.cond:diet.logical)))
 
-##------------------------------------------------------------
-## Check Assumptions
-##------------------------------------------------------------
-##  Normality
-shapiro.test(filter(larval.yolk.diet, yolk.cond == "Yolk sac and globule")$mean.diet.count)   ## p < 0.001; fail normality
-shapiro.test(filter(larval.yolk.diet, yolk.cond == "Oil globule only")$mean.diet.count)     ## p = 0.005; fail normality
-shapiro.test(filter(larval.yolk.diet, yolk.cond == "Absorbed")$mean.diet.count)             ## p < 0.001; fail normality
-
-## Homogeneity of Variance by yolk
-## Flinger-Killeen Test is a non-parametric test which is very robust against departures from normality.
-fligner.test(mean.diet.count ~ yolk.cond, data = larval.yolk.diet)  ## p < 0.001; fail equal variance
-
-##------------------------------------------------------------
-## ANOVA
-##------------------------------------------------------------
-kruskal.test(larval.yolk.diet$mean.diet.count, larval.yolk.diet$yolk.cond)
-
-pairwise.wilcox.test(larval.yolk.diet$mean.diet.count, larval.yolk.diet$yolk.cond, p.adjust.method = "BH")
+## Create df with length bin sample size for plotting later
+larval.yolk.n <- larval.yolk.diet %>% dplyr::select(tl.bin, n.tl) %>% 
+  distinct()
 
 
+## CALCULATE PROBABILITIES ======================================
 
-## ===========================================================
-## Rename yolk-sac conditions
-## ===========================================================
-larval.yolk.diet$yolk.cond <- gsub("Yolk sac and globule", "Yolk Sac Present", larval.yolk.diet$yolk.cond)
-larval.yolk.diet$yolk.cond <- gsub('Absorbed', 'Absorbed', larval.yolk.diet$yolk.cond)
-larval.yolk.diet$yolk.cond <- gsub('Oil globule only', 'Oil Globule Only', larval.yolk.diet$yolk.cond)
+## Calculate the probility of each "group" by length bin,
+##  rename the "group" to simplified versions for plotting.
+larval.yolk.diet.all.prob <- larval.yolk.diet %>% group_by(tl.bin, group) %>% 
+  summarize(n = n()) %>% ungroup %>% 
+  group_by(tl.bin) %>% 
+  mutate(sum = sum(n),
+         prob = n/sum) %>% ungroup() %>% 
+  mutate(group = gsub(":", ", ", group),
+         group = ifelse(group == "Yolk Sac, Food Absent", "Yolk Sac - No Food    ",
+                 ifelse(group == "Yolk Sac, Food Present", "Yolk Sac - Food    ",
+                 ifelse(group == "Absorbed, Food Absent", "No Yolk Sac - No Food    ",
+                 ifelse(group == "Absorbed, Food Present", "No Yolk Sac - Food", "")))),
+         group = factor(group, ordered = TRUE, levels = c("Yolk Sac - No Food    ", "Yolk Sac - Food    ",
+                                                          "No Yolk Sac - No Food    ", "No Yolk Sac - Food")))
 
-larval.yolk.diet %<>% mutate(yolk.cond = factor(yolk.cond, ordered = TRUE, levels = c('Yolk Sac Present', 'Oil Globule Only', 'Absorbed')))
 
+## VISUALIZATION ================================================
 
-## ===========================================================
-## Visualization =============================================
-## ===========================================================
-ggplot(larval.yolk.diet, aes(x = tl.bin, y = mean.diet.count, fill = yolk.cond)) +
-  geom_point(position = position_jitter(width = 0.175), shape = 21, color = "black", size = 2) +
-  stat_smooth(method = "lm", se = FALSE, aes(color = yolk.cond), show.legend  = FALSE) +
-  scale_x_continuous(limits = c(5, 26.55), breaks = seq(5, 25, 5), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-7, 354), breaks = seq(0, 350, 50), expand = c(0, 0)) +
-  scale_fill_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a")) +
-  scale_color_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a")) +
-  labs(x = "Length Bin (mm)", y = "Average No. of Diet Items", fill = "Yolk-sac Condition") +
-  theme(panel.grid = element_blank(), panel.background = element_blank(),
-        panel.spacing = unit(1, "lines"), axis.line = element_line(),
-        axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18),
-        axis.title.y = element_text(size = 25, margin = margin(0, 15, 0, 0)),
-        axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
-        axis.ticks.length = unit(2, 'mm'), legend.position = c(0.15, 0.85),
-        legend.text = element_text(size = 13), legend.title = element_text(size = 15),
-        legend.key = element_rect(fill = "white"),
-        plot.margin = unit(c(5, 5, 5, 5), "mm"))
+ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = prob, fill = group)) + 
+  geom_bar(stat = "identity", width = 0.8, color = "black") +
+  scale_x_continuous(limits = c(8.5, 19.5), breaks = seq(9, 19, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25), expand = c(0, 0)) +
+  #scale_fill_manual(values = c("#fdb863", "#e66101", "#b2abd2", "#5e3c99")) +
+  scale_fill_manual(values = c("#f7f7f7", "#cccccc", "#969696", "#636363")) +
+  #scale_fill_manual(values = c("#636363", "#969696", "#cccccc", "#f7f7f7")) +
+  geom_text(data = larval.yolk.n, aes(x = tl.bin, y = 0.02, label = paste0("n=", n.tl)), size = 4, inherit.aes = FALSE) +
+  labs(x = "Length Bin (mm)", y = "Probability", fill = "") +
+  theme_bw() +
+  theme(panel.grid = element_blank(), panel.background = element_blank(), 
+        strip.text = element_blank(), 
+        axis.ticks.length = unit(2, 'mm'),
+        axis.text.y = element_text(size = 16, colour = "black"),
+        axis.text.x = element_text(size = 16, colour = "black"),
+        axis.title.y = element_text(size = 23, margin = margin(0, 20, 0, 0)),
+        axis.title.x = element_text(size = 23, margin = margin(20, 0, 0, 0)),
+        legend.text = element_text(size = 12),
+        legend.key.size = unit(0.75, 'cm'),
+        panel.spacing = unit(2, "lines"), legend.position = "top",
+        plot.margin = unit(c(8, 5, 5, 5), "mm"))
 
 ## Save figure
-ggsave("figures/apis_larval_length_diet.png", dpi = 300, width = 10, height = 6)
+ggsave("figures/apis_larval_yolkDiet_all.png", width = 12, height = 8, dpi = 300)
+
+
+## SUPPLEMENTAL ========================================================
+
+## Histogram to see sample size distribution
+ggplot(larval.yolk.diet, aes(x = tl.bin, fill = group)) + 
+  geom_histogram(binwidth = 1, color = "black") +
+  scale_fill_manual(values = c("#e66101", "#fdb863", "#5e3c99", "#b2abd2")) +
+  facet_wrap(~week, ncol = 2, dir = "v")
 
