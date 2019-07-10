@@ -42,7 +42,7 @@ bytho.samples <- read.csv("data/Superior_Files/Summaries/Bytho_Samples.csv", hea
 ##  These files are trimmed down to include only neccessary variables
 effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
   select(trawl, date, week, j.day, station, group, serial.in, serial.out)
-zoop <- read_excel("data/APIS_Zooplankton_2018.xlsx", sheet = "Zoop Effort") %>% 
+zoop <- read_excel("data/APIS_Zooplankton_Effort_2018.xlsx", sheet = "Zoop Effort") %>% 
   select(trawl, volume.l)
 
 
@@ -206,6 +206,6 @@ zoop.summary %<>% mutate(n.counted = replace_na(n.counted, 0),
 
 ## SAVE SUMMARY FILE ============================================
 
-write.csv(zoop.summary, "data/Superior_Files/Summaries/APIS_Zoop_Summary.csv", row.names = F)
+write.csv(zoop.summary, "data/APIS_Zooplankton_2018.csv", row.names = F)
 
 ## ---------------------------END--------------------------------
