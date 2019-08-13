@@ -28,7 +28,6 @@ library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
 library(tidyr)         # transforming data arrangement (tidy data!!)
 library(ggplot2)       # visualizations
-library(lemon)         # for facet_rep_wrap()
 
 
 ## LOAD DATA ====================================================
@@ -126,7 +125,7 @@ larval.yolk.diet.all.prob <- larval.yolk.diet %>% group_by(tl.bin, group) %>%
   summarize(n = n()) %>% ungroup %>% 
   group_by(tl.bin) %>% 
   mutate(sum = sum(n),
-         prob = n/sum) %>% ungroup() %>% 
+         perc = (n/sum)*100) %>% ungroup() %>% 
   mutate(group = gsub(":", ", ", group),
          group = ifelse(group == "Yolk Sac, Food Absent", "Yolk Sac - No Food    ",
                  ifelse(group == "Yolk Sac, Food Present", "Yolk Sac - Food    ",
@@ -138,15 +137,15 @@ larval.yolk.diet.all.prob <- larval.yolk.diet %>% group_by(tl.bin, group) %>%
 
 ## VISUALIZATION ================================================
 
-ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = prob, fill = group)) + 
+ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = perc, fill = group)) + 
   geom_bar(stat = "identity", width = 0.8, color = "black") +
   scale_x_continuous(limits = c(8.5, 19.5), breaks = seq(9, 19, 1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 100.000000001), breaks = seq(0, 100, 25), expand = c(0, 0)) +
   #scale_fill_manual(values = c("#fdb863", "#e66101", "#b2abd2", "#5e3c99")) +
   scale_fill_manual(values = c("#f7f7f7", "#cccccc", "#969696", "#636363")) +
   #scale_fill_manual(values = c("#636363", "#969696", "#cccccc", "#f7f7f7")) +
-  geom_text(data = larval.yolk.n, aes(x = tl.bin, y = 0.02, label = paste0("n=", n.tl)), size = 4, inherit.aes = FALSE) +
-  labs(x = "Length Bin (mm)", y = "Probability", fill = "") +
+  geom_text(data = larval.yolk.n, aes(x = tl.bin, y = 1.8, label = paste0("n=", n.tl)), size = 4, inherit.aes = FALSE) +
+  labs(x = "Length Bin (mm)", y = "Percentage", fill = "") +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         strip.text = element_blank(), 
@@ -155,7 +154,7 @@ ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = prob, fill = group)) +
         axis.text.x = element_text(size = 16, colour = "black"),
         axis.title.y = element_text(size = 23, margin = margin(0, 20, 0, 0)),
         axis.title.x = element_text(size = 23, margin = margin(20, 0, 0, 0)),
-        legend.text = element_text(size = 12),
+        legend.text = element_text(size = 14),
         legend.key.size = unit(0.75, 'cm'),
         panel.spacing = unit(2, "lines"), legend.position = "top",
         plot.margin = unit(c(8, 5, 5, 5), "mm"))
