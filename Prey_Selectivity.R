@@ -32,7 +32,7 @@ library(lemon)         # for facet_rep_wrap()
 ## Load in the data ==========================================
 ## ===========================================================
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
-envir.prey <- read_excel("data/APIS_Zooplankton_2018.xlsx", sheet = "Zoop Biomass-Density")
+envir.prey <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
 effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
   select(trawl, week)
 
@@ -68,7 +68,9 @@ diet.cont[is.na(diet.cont)] <- 0
 ## Combine minutus and sicilis to genera, then drop the old columns
 ## Collapse the species columns into two: prey species and count
 ## -----------------------------------------------------------
-diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thomasi + Eucyclops + Cyc_Copepodite,
+diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thomasi + Eucyclops,
+                                  "Calanoid Copepodid" = Cal_Copepodite,
+                                  "Cyclopoid Copepodid" = Cyc_Copepodite,
                                   Calanoidae = L.minutus + L.sicilis + Limnocalanus_macrurus + E.lacustrus + Senecella_calanoides + Cal_Copepodite) %>%
   select(-Acanthocyclops, -Diacyclops_thomasi, -Eucyclops, -Cyc_Copepodite,
          -L.minutus, -L.sicilis, -Limnocalanus_macrurus, -E.lacustrus, -Senecella_calanoides, -Cal_Copepodite) %>%
@@ -92,12 +94,12 @@ envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>%
          species = gsub("Limnocalanus", "Calanoidae", species),
          species = gsub("Epischura", "Calanoidae", species),
          species = gsub("Senecella_calanoides", "Calanoidae", species),
-         species = gsub("Cal_Copepodite", "Calanoidae", species),
          species = gsub("Acanthocyclops", "Cyclopidae", species),
          species = gsub("Diacyclops", "Cyclopidae", species),
          species = gsub("Eucyclops", "Cyclopidae", species),
          species = gsub("Mesocyclops", "Cyclopidae", species),
-         species = gsub("Cyc_Copepodite", "Cyclopidae", species)) %>% 
+         species = gsub("Cyclopoid copepodid", "Cyclopoid Copepodid", species),
+         species = gsub("Calanoid copepodid", "Calanoid Copepodid", species)) %>% 
   ## remove "empty diet" trawls
   filter(trawl %in% c(trawl.list))
 
@@ -112,7 +114,7 @@ species.list <- unique(c(unique(envir.prey.filtered$species), unique(diet.comp$s
 ## ===========================================================
 ## -----------------------------------------------------------
 ## Group the data by trawl number and species to sum species counts for each trawl
-## IMPORTANT: New DF's number of obs. must match the no. of trawls (80) times the no. of species (8)!
+## IMPORTANT: New DF's number of obs. must match the no. of trawls (81) times the no. of species (11)!
 ## -----------------------------------------------------------
 diet.cont.species <- diet.comp %>% group_by(trawl, species)%>%
   summarize(diet.count.species = sum(diet.count)) %>%
@@ -150,7 +152,7 @@ envir.prey.all <- envir.prey.filtered %>%
   
 ## -----------------------------------------------------------
 ## Group the data by trawl number and species to sum species counts for each trawl
-## IMPORTANT: New DF's number of obs. must match the no. of trawls (80) times the no. of species (8)!
+## IMPORTANT: New DF's number of obs. must match the no. of trawls (81) times the no. of species (11)!
 ## -----------------------------------------------------------
 envir.prey.species <- envir.prey.all %>% group_by(trawl, species)%>%
   summarize(prey.count.species = sum(density.l)) %>% ungroup()
@@ -230,13 +232,16 @@ larval.selectivity.week <- larval.selectivity %>%
 ## Abbreviate taxa names
 ## ===========================================================
 larval.selectivity.week$species <- gsub('Cyclopidae', 'CY', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Cyclopoid Copepodid', 'CY*', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Bosmina', 'BO', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Bythotrephes', 'BY', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Daphnia', 'DA', larval.selectivity.week$species)
-larval.selectivity.week$species <- gsub('Diaphanosoma', 'DI', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Diaphanosoma', 'SI', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Calanoidae', 'CA', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Calanoid Copepodid', 'CA*', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Holopedium', 'HO', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week$species)
+larval.selectivity.week$species <- gsub('Leptodora_kindi', 'LK', larval.selectivity.week$species)
 
 
 ## ===========================================================
@@ -302,7 +307,7 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species
         strip.background = element_blank()) +
   facet_rep_wrap(~week, dir = "v", ncol = 2)
 
-ggsave("figures/apis_larval_selectivity_alpha_weekly.png", dpi = 300, width = 8, height = 10)
+ggsave("figures/apis_larval_selectivity_alpha_weekly.png", dpi = 300, width = 10, height = 10)
 
 ## -----------------------------------------------------------
 ## Plot Electivity  
@@ -327,5 +332,5 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
         strip.background = element_blank()) +
   facet_rep_wrap(~week, dir = "v", ncol = 2)
 
-ggsave("figures/apis_larval_selectivity_E_weekly.png", dpi = 300, width = 8, height = 10)
+ggsave("figures/apis_larval_selectivity_E_weekly.png", dpi = 300, width = 10, height = 10)
 

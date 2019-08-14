@@ -89,7 +89,7 @@ ggplot(larval.tl.freq, aes(x = tl.bin, y = n.tl)) +
   geom_bar(stat = "identity", width = 1, color = "black", fill = "gray80") +
   scale_x_continuous(limits = c(5, 26.55), breaks = seq(5, 25, 5), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 65), breaks = seq(0, 60, 15), expand = c(0, 0)) +
-  labs(x = "Length Bin (mm)", y = "Frequency") +
+  labs(x = "Length Class (mm)", y = "Frequency") +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
         panel.spacing = unit(1, "lines"), axis.line = element_line(),
         axis.text.x = element_text(size = 13),
@@ -113,7 +113,7 @@ ggplot(larval.yolk.freq, aes(x = tl.bin, y = n.tl, fill = yolk.cond)) +
   scale_x_continuous(limits = c(5, 26.55), breaks = seq(5, 25, 5), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 110), breaks = seq(0, 110, 10), expand = c(0, 0)) +
   scale_fill_grey(start = 0.3, end = 0.85) +
-  labs(x = "Length Bin (mm)", y = "Frequency", fill = "Yolk-sac Condition") +
+  labs(x = "Length Class (mm)", y = "Frequency", fill = "Yolk-sac Condition") +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
         panel.spacing = unit(1, "lines"), axis.line = element_line(),
         axis.text.x = element_text(size = 18),

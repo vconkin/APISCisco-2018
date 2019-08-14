@@ -16,6 +16,9 @@ rm(list = ls(all.names=TRUE))
 library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
 library(ggplot2)       # visualizations
+library(grid)          # plot matrix text
+library(gridExtra)     # plot matrix layout
+library(gtable)        # plot matrix legend
 
 
 ## LOAD DATA ====================================================
@@ -37,7 +40,9 @@ zoop %<>% mutate(taxa.group.2 = ifelse(species == "Acanthocyclops", "  Cyclopoid
                                 ifelse(species == "Limnocalanus", "  Calanoids",
                                 ifelse(species == "Leptodiaptomus", "  Calanoids",
                                 ifelse(species == "Mesocyclops", "  Cyclopoids",
-                                ifelse(species == "Nauplii", "  Nauplii", "")))))))))))),
+                                ifelse(species == "Calanoid copepodid", "  Calanoid Copepodites",
+                                ifelse(species == "Cyclopoid copepodid", "  Cyclopoid Copepodites",
+                                ifelse(species == "Nauplii", "  Nauplii", "")))))))))))))),
                  tax.group.2 = factor(taxa.group.2))
   
 
@@ -55,56 +60,68 @@ weekly.data <- zoop %>% group_by(week, station, taxa.group.2) %>%
          prop.biomass = mean.biomass/sum.biomass)
 
 
+## ABBREVIATE TAXA NAMES ========================================
+
+weekly.data$taxa.group.2 <- gsub('Cyclopoids', "CY", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Cyclopoid Copepodites', "CY*", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Bythotrephes', "BY", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Daphnia', "DA", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Calanoids', "CA", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Calanoid Copepodites', "CA*", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Nauplii', "NA", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Other Cladocera', "OC", weekly.data$taxa.group.2)
+
+
 ## VISUALIZATION ================================================
 
 ## Mean density
-ggplot(weekly.data, aes(x = week, y = mean.density)) +
+zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
+  geom_line(aes(colour = taxa.group.2), size = 1) +
   geom_point(size = 1.5) +
-  geom_line(aes(linetype = taxa.group.2, colour = taxa.group.2), size = 0.85) +
-  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   labs(x = 'Week', y = 'Mean Density (#/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
-        legend.text = element_text(size=10),
+        legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
+        axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
+        axis.ticks.length = unit(2.0, 'mm'), 
+        plot.margin = unit(c(5, 10, 10, 5), 'mm'))
 
 ## Save figure
-ggsave("figures/apis_zoop_density.png", width = 12, height = 8, dpi = 300)
+ggsave("figures/apis_zoop_density.png", plot = zoop.density, width = 12, height = 8, dpi = 300)
 
 
 ## Mean biomass
-ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
+zoop.biomass <- ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
+  geom_line(aes(colour = taxa.group.2), size = 1) +
   geom_point(size = 1.5) +
-  geom_line(aes(linetype = taxa.group.2, colour = taxa.group.2), size = 0.85) +
-  scale_y_continuous(limits = c(0, 4), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
-  labs(x = 'Week', y = 'Mean Biomass (ug dry/L)') +
+  labs(x = 'Week', y = 'Mean Biomass (µg dry/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
-        legend.text = element_text(size = 10),
+        legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
+        axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
+        axis.ticks.length = unit(2.0, 'mm'), 
+        plot.margin = unit(c(5, 5, 10, 10), 'mm'))
 
 ## Save figure
-ggsave("figures/apis_zoop_biomass.png", width = 12, height = 8, dpi = 300)
+ggsave("figures/apis_zoop_biomass.png", plot = zoop.biomass, width = 12, height = 8, dpi = 300)
 
 
 ## Proportional stacked area plot of density
-ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
+zoop.prop.density <- ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
   geom_area(position = "fill", color = "black") + 
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
@@ -112,21 +129,21 @@ ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
-        legend.text = element_text(size = 10),
+        legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
+        axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
+        axis.ticks.length = unit(2.0, 'mm'), 
+        plot.margin = unit(c(5, 10, 10, 5), 'mm'))
 
 ## Save figure
-ggsave("figures/apis_zoop_propDensity.png", width = 12, height = 8, dpi = 300)
+ggsave("figures/apis_zoop_propDensity.png", plot = zoop.prop.density, width = 12, height = 8, dpi = 300)
 
 
 ## Proportional stacked area plot of biomass
-ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
+zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
   geom_area(stat = "identity", position = "fill", color = "black") + 
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
@@ -134,15 +151,37 @@ ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
-        legend.text = element_text(size = 10),
+        legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 15, margin = margin(0, 10, 0, 0)),
-        axis.title.x = element_text(size = 15, margin = margin(10, 0, 0, 0)),
-        axis.ticks.length = unit(1.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 5, 5), 'mm'))
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
+        axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
+        axis.ticks.length = unit(2.0, 'mm'), 
+        plot.margin = unit(c(5, 5, 10, 10), 'mm'))
 
 ## Save figure
-ggsave("figures/apis_zoop_propBiomass.png", width = 12, height = 8, dpi = 300)
+ggsave("figures/apis_zoop_propBiomass.png", plot = zoop.prop.biomass, width = 12, height = 8, dpi = 300)
+
+
+## PANELED VISUALIZATION ========================================
+
+## Create common legend
+legend <- get_legend(zoop.prop.density + theme(legend.position = "right"))
+
+# arrange the three plots in a single row
+zoop.grid <- plot_grid(zoop.density + theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank()),
+                       zoop.biomass + theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank()),
+                       zoop.prop.density + theme(legend.position = "none", axis.title.x = element_blank()),
+                       zoop.prop.biomass + theme(legend.position = "none", axis.title.x = element_blank()),
+                       nrow = 2
+)
+
+## add legend to grid
+zoop.grid.legend <- plot_grid(zoop.grid, legend, ncol = 2, rel_widths = c(2, 0.2))
+
+## add common x-axis label
+ggdraw(add_sub(zoop.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.48, size = 30))
+
+ggsave("figures/apis_zoop_gridded.png", width = 18, height = 10, dpi = 300)
 

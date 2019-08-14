@@ -85,7 +85,7 @@ sample.long <- all.samples %>% group_by(subSampleID, species) %>%
 sample.long[is.na(sample.long)] <- 0
 
 ## Flip the data frame back to stacked column format
-sample.long %<>% gather(species, total, Acanthocyclops:Nauplii) %>%
+sample.long %<>% gather(species, total, Bosmina:Nauplii) %>%
   select(serial = subSampleID, species, ex.coef, total)
 
 ## Summarize the bytho data and fill in zeros

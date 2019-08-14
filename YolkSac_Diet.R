@@ -145,7 +145,7 @@ ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = perc, fill = group)) +
   scale_fill_manual(values = c("#f7f7f7", "#cccccc", "#969696", "#636363")) +
   #scale_fill_manual(values = c("#636363", "#969696", "#cccccc", "#f7f7f7")) +
   geom_text(data = larval.yolk.n, aes(x = tl.bin, y = 1.8, label = paste0("n=", n.tl)), size = 4, inherit.aes = FALSE) +
-  labs(x = "Length Bin (mm)", y = "Percentage", fill = "") +
+  labs(x = "Length Class (mm)", y = "Percentage", fill = "") +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         strip.text = element_blank(), 

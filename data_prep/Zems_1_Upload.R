@@ -19,7 +19,7 @@ rm(list = ls(all.names=TRUE))
 
 library(dplyr)         # manipulating data
 library(data.table)    # for fread() - super fast load-in of data
-
+library(tidyr)         # for replace_na()
 
 ## LOAD DATA ====================================================
 
@@ -48,9 +48,21 @@ all.samples <- summaryfile %>%
   ## Select (keep) only columns with data
   select(subSampleID, amountSubSampled, subSampleTotal, subSampleExpansionCoef, species, organismCount, length)
 
+## Make a data frame with the copepodite adult length threshold for each copepod genus
+## Sources: https://www.glsc.usgs.gov/greatlakescopepods/ & Conway 1977	
+copepodite.length <- tibble(species = c("Acanthocyclops", "Diacyclops", "Epischura", "Leptodiaptomus", "Limnocalanus", "Mesocyclops"),
+                            order = c("Cyclopoid copepodid", "Cyclopoid copepodid", "Calanoid copepodid", "Calanoid copepodid", "Calanoid copepodid", "Cyclopoid copepodid"),
+                            length.threshold = c(1.26, 0.8, 1.6, 0.9, 2.2825, 0.8425))
+
+## Join length threshold and rename genus based on length
+all.samples.copepodite <- left_join(all.samples, copepodite.length) %>% 
+  mutate(copep.diff = replace_na(length.threshold - length, -0.1),  ## use replace_na to maintain all non copepod organisms
+         copep.logical = ifelse(copep.diff >= 0, order, species)) %>% 
+  select(subSampleID, amountSubSampled, subSampleTotal, subSampleExpansionCoef, species = copep.logical, organismCount, length)
+
 
 ## SAVE MERGED FILE =============================================
 
-write.csv(all.samples, "data/Superior_Files/Summaries/All_Samples.csv", row.names = FALSE)
+write.csv(all.samples.copepodite, "data/Superior_Files/Summaries/All_Samples.csv", row.names = FALSE)
 
 ## ---------------------------END--------------------------------
