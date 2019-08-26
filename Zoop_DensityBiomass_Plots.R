@@ -16,9 +16,9 @@ rm(list = ls(all.names=TRUE))
 library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
 library(ggplot2)       # visualizations
-library(grid)          # plot matrix text
-library(gridExtra)     # plot matrix layout
+library(cowplot)       # plot matrix layout
 library(gtable)        # plot matrix legend
+
 
 
 ## LOAD DATA ====================================================
