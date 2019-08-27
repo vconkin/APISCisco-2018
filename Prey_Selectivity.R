@@ -1,5 +1,4 @@
 ##############################################################
-##############################################################
 ##  
 ##  APIS Cisco (Lucke et al.) manuscript
 ##  
@@ -10,16 +9,14 @@
 ## Zems data
 ## 
 ##############################################################
-##############################################################
-## ===========================================================
+
 ## Clear the environment first ===============================
-## ===========================================================
+
 rm(list = ls(all.names=TRUE))
 
 
-## ===========================================================
 ## Load Packages =============================================
-## ===========================================================
+
 library(readxl)        # reading Excel data
 library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
@@ -28,29 +25,23 @@ library(ggplot2)       # visualizations
 library(lemon)         # for facet_rep_wrap()
 
 
-## ===========================================================
 ## Load in the data ==========================================
-## ===========================================================
+
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
 envir.prey <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
 effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
   select(trawl, week)
 
 
-## ===========================================================
 ## Diet Content Data Prep ====================================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Calculate sample sizes (no. of larvae examined) by week - save for plotting
-## -----------------------------------------------------------
 diet.sample.size <- left_join(diet.cont, effort) %>% 
   group_by(week) %>% 
   summarize(n = sum(n.fish),
             n.trawl = n_distinct(trawl))
 
-## -----------------------------------------------------------
 ## Restrict DF to the selected variables and rename variables
-## -----------------------------------------------------------
 diet.cont %<>% select(trawl, Nauplii:Chironomid_pupae) %>% 
   rename("Acanthocyclops" = "Acanthocyclops_sp.", "Eucyclops" = "Eucyclops_sp.",
          "Holopedium" = "Holopedium_gibberum", "Daphnia" = "Daphnia_sp.", 
@@ -59,15 +50,11 @@ diet.cont %<>% select(trawl, Nauplii:Chironomid_pupae) %>%
   select(-"Unknown_Fragment_Calanoid", -"Unknown_Fragment_Cyclopoid", -"Invertebrate_eggs", 
          -"Chironomid_pupae", -"Rotifera")
 
-## -----------------------------------------------------------
 ## Make all NAs (blanks) zero
-## -----------------------------------------------------------
 diet.cont[is.na(diet.cont)] <- 0
 
-## -----------------------------------------------------------
 ## Combine minutus and sicilis to genera, then drop the old columns
 ## Collapse the species columns into two: prey species and count
-## -----------------------------------------------------------
 diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thomasi + Eucyclops,
                                   "Calanoid Copepodid" = Cal_Copepodite,
                                   "Cyclopoid Copepodid" = Cyc_Copepodite,
@@ -77,18 +64,13 @@ diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thoma
   gather(species, diet.count, Nauplii:Calanoidae) %>% droplevels()
 
 
-## -----------------------------------------------------------
 ## Create a list of trawl numbers that have larvae with diet contents
-## -----------------------------------------------------------
 trawl.list <- unique(diet.comp$trawl)
 
 
-## ===========================================================
 ## Zooplankton (Environment) Data Prep =======================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Restrict DF to the selected variables and rename variables
-## -----------------------------------------------------------
 envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>% 
   mutate(species = gsub("Leptodiaptomus", "Calanoidae", species),
          species = gsub("Limnocalanus", "Calanoidae", species),
@@ -103,89 +85,67 @@ envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>%
   ## remove "empty diet" trawls
   filter(trawl %in% c(trawl.list))
 
-## -----------------------------------------------------------
+
 ## Create a list of diet taxa and trawl numbers
-## -----------------------------------------------------------
 species.list <- unique(c(unique(envir.prey.filtered$species), unique(diet.comp$species)))
 
-
-## ===========================================================
 ## Diet Content Proportion ===================================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Group the data by trawl number and species to sum species counts for each trawl
 ## IMPORTANT: New DF's number of obs. must match the no. of trawls (81) times the no. of species (11)!
-## -----------------------------------------------------------
+
 diet.cont.species <- diet.comp %>% group_by(trawl, species)%>%
   summarize(diet.count.species = sum(diet.count)) %>%
   ungroup()
 
-## -----------------------------------------------------------
 ## Group by trawl to sum total prey counts for each trawl
-## -----------------------------------------------------------
 diet.cont.total <- diet.comp %>% group_by(trawl) %>% 
   summarize(diet.count.trawl.total = sum(diet.count))
 
-## -----------------------------------------------------------
 ## Join the total counts and species specific counts to calculate proportion of diet for each trawl
 ##  If proportion is NA, replace with zero
-## -----------------------------------------------------------
+
 diet.cont.prop <- full_join(diet.cont.species, diet.cont.total) %>%
   mutate(diet.prop = diet.count.species/diet.count.trawl.total,
          diet.prop = ifelse(is.na(diet.prop) == TRUE, 0, diet.prop)) %>% 
   select(trawl, species, diet.prop)
 
-## -----------------------------------------------------------
 ## Clean up environment
-## -----------------------------------------------------------
 rm(diet.comp, diet.cont, diet.cont.species, diet.cont.total)
 
 
-## ===========================================================
 ## Zooplankton (Environment) Proportion ======================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Add zeros for all prey taxa missing in the environment that was found in diet
-## -----------------------------------------------------------
 envir.prey.all <- envir.prey.filtered %>% 
   complete(trawl = trawl.list, species = species.list, fill = list(density.l = 0)) 
   
-## -----------------------------------------------------------
 ## Group the data by trawl number and species to sum species counts for each trawl
 ## IMPORTANT: New DF's number of obs. must match the no. of trawls (81) times the no. of species (11)!
-## -----------------------------------------------------------
+
 envir.prey.species <- envir.prey.all %>% group_by(trawl, species)%>%
   summarize(prey.count.species = sum(density.l)) %>% ungroup()
 
-## -----------------------------------------------------------
 ## Group by trawl to sum total prey counts for each trawl
-## -----------------------------------------------------------
 envir.prey.total <- envir.prey.all %>% group_by(trawl) %>% 
   summarize(prey.count.trawl.total = sum(density.l))
 
-## -----------------------------------------------------------
 ## Join the total counts and species specific counts to calculate proportion of diet for each trawl
 ##  If proportion is NA, replace with zero
-## -----------------------------------------------------------
 envir.prey.prop <- full_join(envir.prey.species, envir.prey.total) %>% 
   mutate(envir.prop = prey.count.species / prey.count.trawl.total,
          envir.prop = ifelse(is.na(envir.prop) == TRUE, 0, envir.prop)) %>% 
   select(trawl, species, envir.prop)
 
-## -----------------------------------------------------------
 ## Clean up environment
-## -----------------------------------------------------------
 rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.filtered)
 
-
-## ===========================================================
 ## Selectivity Calculations ===================================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Combine diet and environment proportions, 
 ## filter out only data that has a zero in both diet and environment,
 ## and calculate diet:envir ratio
-## -----------------------------------------------------------
+
 larval.diet.env.prop <- left_join(diet.cont.prop, envir.prey.prop) %>%
   mutate(diet.envir = diet.prop / envir.prop,
          ## manually assign r/p as 1 if prey is found in diet but not environment (assumes they consumed all available prey)
@@ -193,17 +153,14 @@ larval.diet.env.prop <- left_join(diet.cont.prop, envir.prey.prop) %>%
   ## remove any no diet, no environment taxa
   filter(!is.na(diet.envir))
 
-## -----------------------------------------------------------
+
 ## Calculate alpha ((r/p)/sum(r/p))
-## -----------------------------------------------------------
 larval.alpha <- larval.diet.env.prop %>%
   group_by(trawl) %>% 
   mutate(alpha = diet.envir / sum(diet.envir),
          alpha = ifelse(is.na(alpha) == TRUE, 0, alpha))
 
-## -----------------------------------------------------------
 ## Calculate electivity
-## -----------------------------------------------------------
 larval.selectivity <- left_join(effort, larval.alpha) %>% 
   filter(!is.na(species)) %>% 
   group_by(week) %>% 
@@ -211,9 +168,7 @@ larval.selectivity <- left_join(effort, larval.alpha) %>%
   mutate(E = (alpha - (1 / n.species)) / (alpha + (1 / n.species)))
 
 
-## ===========================================================
 ## Average the Selectivity Values ============================
-## ===========================================================
 larval.selectivity.week <- larval.selectivity %>%
   group_by(week, species) %>% 
   summarize(n.species = mean(n.species),
@@ -228,9 +183,7 @@ larval.selectivity.week <- larval.selectivity %>%
          se.E = sd.E / sqrt(n.trawl))
 
 
-## ===========================================================
 ## Abbreviate taxa names
-## ===========================================================
 larval.selectivity.week$species <- gsub('Cyclopidae', 'CY', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Cyclopoid Copepodid', 'CY*', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Bosmina', 'BO', larval.selectivity.week$species)
@@ -244,9 +197,7 @@ larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week
 larval.selectivity.week$species <- gsub('Leptodora_kindi', 'LK', larval.selectivity.week$species)
 
 
-## ===========================================================
 ## Expand week numbers to date ranges
-## ===========================================================
 larval.selectivity.week$week <- gsub('23', 'June 4-5', larval.selectivity.week$week)
 larval.selectivity.week$week <- gsub('20', 'May 14-15', larval.selectivity.week$week)
 larval.selectivity.week$week <- gsub('25', 'June 18-20', larval.selectivity.week$week)
@@ -265,9 +216,7 @@ larval.selectivity.week %<>% mutate(week = factor(week, levels = c('May 14-15', 
                                             ordered = TRUE))
 
 
-## ===========================================================
 ## Calculate alpha (preference/avoidance) and E (maximum selection) thresholds
-## ===========================================================
 larval.selectivity.threshold <- larval.selectivity.week %>% 
   filter(mean.E != 0) %>% 
   group_by(week) %>% 
@@ -276,19 +225,14 @@ larval.selectivity.threshold <- larval.selectivity.week %>%
          E.threshold = (1 - (1 / n.species)) / (1 + (1 / n.species)))
 
 
-## ===========================================================
 ## Find all weeks and prey that are NA - creates the dataframe for plotting "nf"
-## ===========================================================
 larval.selectivity.week.zero <- larval.selectivity.week %>% 
   filter(mean.E == 0)
 
 
-## ===========================================================
 ## Visualization =============================================
-## ===========================================================
-## -----------------------------------------------------------
+
 ## Plot Selectivity  
-## -----------------------------------------------------------
 ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
   geom_bar(stat = "identity", color = "black", fill = "gray80", width = 1) +
   geom_errorbar(aes(ymin = mean.alpha + se.alpha, ymax = mean.alpha - se.alpha), width = 0.3) +
@@ -309,9 +253,7 @@ ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species
 
 ggsave("figures/apis_larval_selectivity_alpha_weekly.png", dpi = 300, width = 10, height = 10)
 
-## -----------------------------------------------------------
 ## Plot Electivity  
-## -----------------------------------------------------------
 ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
   geom_bar(stat = "identity", color = "black", fill = "gray80", width = 1) +
   geom_errorbar(data = filter(larval.selectivity.week, se.E != 0), 
