@@ -41,7 +41,6 @@ larval.tl <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Length_
 
 ## Larval diet
 larval.diet <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet") %>% 
-  mutate(trawl = factor(trawl)) %>%
   dplyr::select(trawl, tl.bin, loc.bin.id, n.fish, n.diet, diet.count) %>% 
   mutate(mean.diet.count = diet.count/n.diet,
          mean.diet.count = ifelse(mean.diet.count == "NaN", 0, mean.diet.count),
@@ -100,7 +99,7 @@ larval.yolk.diet <- left_join(larval.diet.full, larval.tl.summary) %>%
          diet.logical = factor(diet.logical)) %>% 
   group_by(tl.bin) %>% 
   mutate(n.tl = n())
-  ## Sample size decreases from 623 to 163 individuals :(
+  ## Sample size decreases from 623 to 431 individuals :(
 
 
 ## Rename yolk-sac conditions and combine oil globule,
@@ -114,7 +113,9 @@ larval.yolk.diet %<>% mutate(yolk.cond = factor(yolk.cond, ordered = TRUE, level
 
 ## Create df with length bin sample size for plotting later
 larval.yolk.n <- larval.yolk.diet %>% dplyr::select(tl.bin, n.tl) %>% 
-  distinct()
+  distinct() %>% 
+  bind_rows(data.frame(tl.bin = 24, n.tl = 0))
+
 
 
 ## CALCULATE PROBABILITIES ======================================
@@ -132,19 +133,22 @@ larval.yolk.diet.all.prob <- larval.yolk.diet %>% group_by(tl.bin, group) %>%
                  ifelse(group == "Absorbed, Food Absent", "No Yolk Sac - No Food    ",
                  ifelse(group == "Absorbed, Food Present", "No Yolk Sac - Food", "")))),
          group = factor(group, ordered = TRUE, levels = c("Yolk Sac - No Food    ", "Yolk Sac - Food    ",
-                                                          "No Yolk Sac - No Food    ", "No Yolk Sac - Food")))
-
+                                                          "No Yolk Sac - No Food    ", "No Yolk Sac - Food"))) %>% 
+  left_join(larval.yolk.n) %>% 
+  mutate(label = paste0(tl.bin,'\n(', n.tl, ")"),
+         label = factor(label, ordered = TRUE, levels = c("6\n(2)", "7\n(1)", "8\n(3)", "9\n(18)", "10\n(34)", "11\n(28)", "12\n(31)", 
+                                                          "13\n(54)", "14\n(79)", "15\n(42)", "16\n(38)", "17\n(39)", "18\n(22)", "19\n(18)", 
+                                                          "20\n(4)", "21\n(12)", "22\n(2)", "23\n(2)", "25\n(1)", "26\n(1)")))
 
 ## VISUALIZATION ================================================
 
-ggplot(larval.yolk.diet.all.prob, aes(x = tl.bin, y = perc, fill = group)) + 
+ggplot(larval.yolk.diet.all.prob, aes(x = label, y = perc, fill = group)) + 
   geom_bar(stat = "identity", width = 0.8, color = "black") +
-  scale_x_continuous(limits = c(8.5, 19.5), breaks = seq(9, 19, 1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(5.5, 26.5), breaks = seq(6, 26, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 100.000000001), breaks = seq(0, 100, 25), expand = c(0, 0)) +
-  #scale_fill_manual(values = c("#fdb863", "#e66101", "#b2abd2", "#5e3c99")) +
   scale_fill_manual(values = c("#f7f7f7", "#cccccc", "#969696", "#636363")) +
-  #scale_fill_manual(values = c("#636363", "#969696", "#cccccc", "#f7f7f7")) +
-  geom_text(data = larval.yolk.n, aes(x = tl.bin, y = 1.8, label = paste0("n=", n.tl)), size = 4, inherit.aes = FALSE) +
+  #geom_text(data = filter(larval.yolk.n, tl.bin >= 11), aes(x = tl.bin, y = 1.8, label = paste0("n=", n.tl)), size = 4, color = "white", inherit.aes = FALSE) +
+  #geom_text(data = filter(larval.yolk.n, tl.bin < 11), aes(x = tl.bin, y = 1.8, label = paste0("n=", n.tl)), size = 4, color = "black", inherit.aes = FALSE) +
   labs(x = "Length Class (mm)", y = "Percentage", fill = "") +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
