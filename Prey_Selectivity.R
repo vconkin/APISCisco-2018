@@ -147,18 +147,23 @@ rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.
 ## and calculate diet:envir ratio
 
 larval.diet.env.prop <- left_join(diet.cont.prop, envir.prey.prop) %>%
-  mutate(diet.envir = diet.prop / envir.prop,
-         ## manually assign r/p as 1 if prey is found in diet but not environment (assumes they consumed all available prey)
-         diet.envir = ifelse(diet.envir == Inf, 1, diet.envir)) %>% 
+  mutate(diet.envir = diet.prop / envir.prop) %>% 
   ## remove any no diet, no environment taxa
   filter(!is.na(diet.envir))
 
-
-## Calculate alpha ((r/p)/sum(r/p))
-larval.alpha <- larval.diet.env.prop %>%
+## Calculate alpha ((r/p)/max(r/p))
+larval.diet.env.prop.nInf <- larval.diet.env.prop %>% filter(!is.infinite(diet.envir)) %>%
   group_by(trawl) %>% 
-  mutate(alpha = diet.envir / sum(diet.envir),
+  mutate(alpha = diet.envir / max(diet.envir),
          alpha = ifelse(is.na(alpha) == TRUE, 0, alpha))
+
+## manually assign alpha as 1 if prey is found in diet but not environment (assumes they consumed all available prey)
+larval.diet.env.prop.Inf <- larval.diet.env.prop %>% filter(is.infinite(diet.envir)) %>% 
+  mutate(alpha = 1)
+
+## Combine non-Inf and Inf dataframes
+larval.alpha <- bind_rows(larval.diet.env.prop.nInf, larval.diet.env.prop.Inf) %>% 
+  arrange(trawl, species)
 
 ## Calculate electivity
 larval.selectivity <- left_join(effort, larval.alpha) %>% 
