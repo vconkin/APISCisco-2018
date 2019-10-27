@@ -1,4 +1,4 @@
-##############################################################
+#################################################################
 ##  
 ##  APIS Cisco (Lucke et al.) manuscript
 ##  
@@ -8,14 +8,14 @@
 ## make a few additional plots that combine the diet and 
 ## Zems data
 ## 
-##############################################################
+#################################################################
 
-## Clear the environment first ===============================
+## Clear the environment first ==================================
 
 rm(list = ls(all.names=TRUE))
 
 
-## Load Packages =============================================
+## Load Packages ================================================
 
 library(readxl)        # reading Excel data
 library(dplyr)         # manipulating data
@@ -25,7 +25,7 @@ library(ggplot2)       # visualizations
 library(lemon)         # for facet_rep_wrap()
 
 
-## Load in the data ==========================================
+## Load in the data =============================================
 
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
 envir.prey <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
@@ -33,7 +33,7 @@ effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") 
   select(trawl, week)
 
 
-## Diet Content Data Prep ====================================
+## Diet Content Data Prep =======================================
 
 ## Calculate sample sizes (no. of larvae examined) by week - save for plotting
 diet.sample.size <- left_join(diet.cont, effort) %>% 
@@ -44,11 +44,12 @@ diet.sample.size <- left_join(diet.cont, effort) %>%
 ## Restrict DF to the selected variables and rename variables
 diet.cont %<>% select(trawl, Nauplii:Chironomid_pupae) %>% 
   rename("Acanthocyclops" = "Acanthocyclops_sp.", "Eucyclops" = "Eucyclops_sp.",
-         "Holopedium" = "Holopedium_gibberum", "Daphnia" = "Daphnia_sp.", 
-         "Bosmina" = "Bosmina_sp.") %>% 
+         "Holopedium" = "Holopedium_gibberum", "Daphnia" = "Daphnia_sp.") %>% 
   ## Remove non-whole organisms
   select(-"Unknown_Fragment_Calanoid", -"Unknown_Fragment_Cyclopoid", -"Invertebrate_eggs", 
-         -"Chironomid_pupae", -"Rotifera")
+         -"Chironomid_pupae", -"Rotifera") %>% 
+  ## remove low density organisms
+  select(-Bythotrephes, -Leptodora_kindi, -Diaphanosoma, -"Bosmina_sp.")
 
 ## Make all NAs (blanks) zero
 diet.cont[is.na(diet.cont)] <- 0
@@ -68,7 +69,7 @@ diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thoma
 trawl.list <- unique(diet.comp$trawl)
 
 
-## Zooplankton (Environment) Data Prep =======================
+## Zooplankton (Environment) Data Prep ==========================
 
 ## Restrict DF to the selected variables and rename variables
 envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>% 
@@ -83,13 +84,17 @@ envir.prey.filtered <- envir.prey %>% select(trawl, species, density.l) %>%
          species = gsub("Cyclopoid copepodid", "Cyclopoid Copepodid", species),
          species = gsub("Calanoid copepodid", "Calanoid Copepodid", species)) %>% 
   ## remove "empty diet" trawls
-  filter(trawl %in% c(trawl.list))
+  filter(trawl %in% c(trawl.list),
+         species != "Bythotrephes",
+         species != "Diaphanosoma",
+         species != "Bosmina")
 
 
 ## Create a list of diet taxa and trawl numbers
 species.list <- unique(c(unique(envir.prey.filtered$species), unique(diet.comp$species)))
 
-## Diet Content Proportion ===================================
+
+## Diet Content Proportion ======================================
 
 ## Group the data by trawl number and species to sum species counts for each trawl
 ## IMPORTANT: New DF's number of obs. must match the no. of trawls (81) times the no. of species (11)!
@@ -114,7 +119,7 @@ diet.cont.prop <- full_join(diet.cont.species, diet.cont.total) %>%
 rm(diet.comp, diet.cont, diet.cont.species, diet.cont.total)
 
 
-## Zooplankton (Environment) Proportion ======================
+## Zooplankton (Environment) Proportion =========================
 
 ## Add zeros for all prey taxa missing in the environment that was found in diet
 envir.prey.all <- envir.prey.filtered %>% 
@@ -140,7 +145,8 @@ envir.prey.prop <- full_join(envir.prey.species, envir.prey.total) %>%
 ## Clean up environment
 rm(envir.prey, envir.prey.total, envir.prey.species, envir.prey.all, envir.prey.filtered)
 
-## Selectivity Calculations ===================================
+
+## Selectivity Calculations =====================================
 
 ## Combine diet and environment proportions, 
 ## filter out only data that has a zero in both diet and environment,
@@ -173,7 +179,7 @@ larval.selectivity <- left_join(effort, larval.alpha) %>%
   mutate(E = (alpha - (1 / n.species)) / (alpha + (1 / n.species)))
 
 
-## Average the Selectivity Values ============================
+## Average the Selectivity Values ===============================
 larval.selectivity.week <- larval.selectivity %>%
   group_by(week, species) %>% 
   summarize(n.species = mean(n.species),
@@ -187,19 +193,14 @@ larval.selectivity.week <- larval.selectivity %>%
   mutate(se.alpha = sd.alpha / sqrt(n.trawl),
          se.E = sd.E / sqrt(n.trawl))
 
-
 ## Abbreviate taxa names
 larval.selectivity.week$species <- gsub('Cyclopidae', 'CY', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Cyclopoid Copepodid', 'CY*', larval.selectivity.week$species)
-larval.selectivity.week$species <- gsub('Bosmina', 'BO', larval.selectivity.week$species)
-larval.selectivity.week$species <- gsub('Bythotrephes', 'BY', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Daphnia', 'DA', larval.selectivity.week$species)
-larval.selectivity.week$species <- gsub('Diaphanosoma', 'SI', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Calanoidae', 'CA', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Calanoid Copepodid', 'CA*', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Holopedium', 'HO', larval.selectivity.week$species)
 larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week$species)
-larval.selectivity.week$species <- gsub('Leptodora_kindi', 'LK', larval.selectivity.week$species)
 
 
 ## Expand week numbers to date ranges
@@ -235,7 +236,7 @@ larval.selectivity.week.zero <- larval.selectivity.week %>%
   filter(mean.E == 0)
 
 
-## Visualization =============================================
+## Visualization ================================================
 
 ## Plot Selectivity  
 ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
