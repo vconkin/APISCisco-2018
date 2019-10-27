@@ -1,4 +1,5 @@
-##  
+#################################################################
+##
 ##  APIS Cisco (Lucke et al.) manuscript
 ##  
 ## This file calculates the average diet for larvae that had
@@ -7,14 +8,14 @@
 ## calculations for average diet for fish that fed during the
 ## first and last two weeks of sampling
 ## 
+#################################################################
 
-
-## Clear the environment first ===============================
+## CLEAR ENVIRONMENT ============================================
 
 rm(list = ls(all.names=TRUE))
 
 
-## Load Packages =============================================
+## LOAD PACKAGES ================================================
 
 library(readxl)        # reading Excel data
 library(dplyr)         # manipulating data
@@ -24,7 +25,7 @@ library(ggplot2)       # visualizations
 library(lemon)         # for facet_rep_wrap()
 
 
-## Load in the data ==========================================
+## LOAD DATA ====================================================
 
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet") %>%
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
@@ -33,14 +34,18 @@ effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") 
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
 
 
-## Diet Content Data Prep ====================================
+## DIET DATA PREP ===============================================
 
 ## Calculate sample sizes (no. of larvae with food) by week - save for plotting
-diet.sample.size <- left_join(diet.cont, effort) %>% 
+#diet.sample.size.trawl <- left_join(diet.cont, effort) %>% 
+#  group_by(trawl, week) %>% 
+#  filter(diet.count > 0) %>%
+#  summarize(n.fish = sum(n.diet))
+
+diet.sample.size.week <- left_join(diet.cont, effort) %>% 
   group_by(week) %>% 
-  filter(diet.count >0) %>%
-  summarize(n = sum(n.diet),
-            n.trawl = n_distinct(trawl))
+  filter(diet.count > 0) %>%
+  summarize(n.fish = sum(n.diet))
 
 ## Restrict DF to the selected variables and rename variables
 diet.cont.species <- diet.cont %>% select(trawl, Nauplii:Chironomid_pupae) %>% 
@@ -52,120 +57,130 @@ diet.cont.species <- diet.cont %>% select(trawl, Nauplii:Chironomid_pupae) %>%
 diet.cont.species[is.na(diet.cont.species)] <- 0
 
 ## Condense all food items down into types
-diet.comp <- diet.cont.species %>% mutate("Copepodids" = Cal_Copepodite + Cyc_Copepodite,
-                                  Calanoidae = L.minutus + L.sicilis + Limnocalanus_macrurus + 
-                                    E.lacustrus + Senecella_calanoides + Unknown_Fragment_Cyclopoid,
-                                  "Other" = Daphnia + Bosmina + Invertebrate_eggs + Chironomid_pupae + 
-                                    Rotifera + Bythotrephes + Diaphanosoma + Leptodora_kindi, 
-                                  Cyclopoidae = Cyc_Copepodite +Acanthocyclops + Diacyclops_thomasi + 
-                                    Eucyclops + Unknown_Fragment_Cyclopoid) %>%
+diet.comp <- diet.cont.species %>% mutate("Calanoid copepodid" = Cal_Copepodite,
+                                          "Cyclopoid copepodid" = Cyc_Copepodite,
+                                          "Calanoidae" = L.minutus + L.sicilis + Limnocalanus_macrurus + 
+                                            E.lacustrus + Senecella_calanoides + Unknown_Fragment_Cyclopoid,
+                                          "Cyclopoidae" = Acanthocyclops + Diacyclops_thomasi + 
+                                            Eucyclops + Unknown_Fragment_Cyclopoid,
+                                          "Other" = Daphnia + Bosmina + Invertebrate_eggs + Chironomid_pupae + 
+                                            Rotifera + Bythotrephes + Diaphanosoma + Leptodora_kindi) %>%
   select(-Acanthocyclops, -Diacyclops_thomasi, -Eucyclops, -Cyc_Copepodite,
          -L.minutus, -L.sicilis, -Limnocalanus_macrurus, -E.lacustrus, 
          -Senecella_calanoides, -Cal_Copepodite, -Unknown_Fragment_Calanoid, 
          -Unknown_Fragment_Cyclopoid, -Invertebrate_eggs, -Chironomid_pupae, 
          -Rotifera, -Daphnia, -Bosmina, -Bythotrephes, -Diaphanosoma, -Leptodora_kindi) %>%
-  gather(species, diet.count, Nauplii:Cyclopoidae) %>% droplevels()
+  gather(species, diet.count, Nauplii:Other) %>% droplevels() %>% 
+  filter(diet.count != 0)
 
-## Create a list of diet taxa and trawl numbers
-species.list <- unique(unique(diet.comp$species))
 
-##Group by weeks and summarize
-diet.comp.weeks <- left_join(diet.comp, effort, by = "trawl") %>%
+## DIET COMPOSITION =============================================
+
+## Group by weeks and summarize
+diet.comp.week <- left_join(diet.comp, effort, by = "trawl") %>%
+  left_join(diet.sample.size.week) %>% 
+  filter(!is.na(n.fish)) %>% 
   group_by(week, species) %>%
-  summarize(diet.total = (sum(diet.count)),
-            sd.diet = sd(diet.count)) %>% ungroup() %>% 
-  complete(week, species = species.list, fill = list(diet.total = 0, sd.diet = 0)) %>% 
-  left_join(diet.sample.size) %>%
+  summarize(n.fish = unique(n.fish),
+            diet.count = sum(diet.count)) %>% 
+  mutate(diet.count.scaled = diet.count/n.fish) %>% 
   group_by(week) %>%
-  mutate(se.diet = sd.diet / sqrt(n.trawl),
-        avg.diet = diet.total/n,
-        perc = (avg.diet/sum(avg.diet)*100),
-         perc = ifelse(perc =="NaN", 0, perc)) %>% ungroup() %>%
-  mutate(label = paste0(week,'\n(', n, ")"),
-         label = factor(label, ordered = TRUE))
-
-diet.comp.weeks.avg<-left_join(diet.comp, effort, by = "trawl") %>%
-  group_by(week, species) %>%
-  summarize(diet.total = sum(diet.count),
-            sd.diet = sd(diet.count)) %>% ungroup() %>% 
-  complete(week, species = species.list, fill = list(mean.diet = 0, sd.diet = 0)) %>% 
-  left_join(diet.sample.size) %>% 
-  mutate(avg.diet = diet.total/n,
-         se.diet = sd.diet / sqrt(n.trawl)) %>% ungroup() %>%
-  mutate(label = paste0(week,'\n(', n, ")"),
+  mutate(diet.total = sum(diet.count.scaled)) %>% 
+  mutate(diet.perc = round((diet.count.scaled/diet.total)*100, 2)) %>% ungroup() %>% 
+  mutate(label = paste0(week,'\n(', n.fish, ")"),
          label = factor(label, ordered = TRUE))
 
 
-## Plot type percent for fish with food
-diet.percent <- ggplot(diet.comp.weeks, aes(x = label, y = perc, fill = species ))+
+## ABBREVIATE TAXA NAMES ========================================
+
+diet.comp.week$species <- gsub('Cyclopoidae', "CY", diet.comp.week$species)
+diet.comp.week$species <- gsub('Cyclopoid copepodid', "CY*", diet.comp.week$species)
+diet.comp.week$species <- gsub('Calanoidae', "CA", diet.comp.week$species)
+diet.comp.week$species <- gsub('Calanoid copepodid', "CA*", diet.comp.week$species)
+diet.comp.week$species <- gsub('Holopedium', "HO", diet.comp.week$species)
+diet.comp.week$species <- gsub('Nauplii', "NA", diet.comp.week$species)
+diet.comp.week$species <- gsub('Other', "OT", diet.comp.week$species)
+
+
+## VISUALIZATION ================================================
+
+## Define a colorblind safe(ish) palette for 7-classes
+color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "#cc79a7")
+
+## Plot Number per Fish  
+diet.count.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.count.scaled, fill = species )) +
   geom_bar(stat = "identity", color = "black", width = 1) +
-  scale_x_discrete(name = "Week", expand = c(0, 0)) +
-  scale_y_continuous(name ="Percent Diet Composition", expand = c(0,0)) +
-  labs(fill ="Prey Group") +
-  #scale_fill_manual(name = "Prey Group", values = c("#f7f7f7", "#d9d9d9", "#bdbdbd","#969696", "#636363", "#252525")) +
+  scale_x_discrete(expand = c(0, 0))+
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20), expand = c(0,0)) +
+  labs(y = "Avg. # of Diet Items per Individual") +
+  scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         strip.text = element_blank(), 
         axis.ticks.length = unit(2, 'mm'),
-        legend.title =  element_text(size = 16, colour = "black"),
-        axis.text.y = element_text(size = 16, colour = "black"),
-        axis.text.x = element_text(size = 16, colour = "black"),
-        axis.title.y = element_text(size = 23, margin = margin(0, 20, 0, 0)),
-        axis.title.x = element_text(size = 23, margin = margin(20, 0, 0, 0)),
-        legend.text = element_text(size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 20, colour = "black"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 25, margin = margin(0, 20, 0, 0)),
+        legend.text = element_text(size = 15),
+        legend.title = element_blank(),
         legend.key.size = unit(0.75, 'cm'),
+        legend.position = "none",
         panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(8, 5, 5, 5), "mm"))
+        plot.margin = unit(c(8, 5, 15, 5), "mm"))
 
-ggsave("figures/apis_diet_percent.png", plot = diet.percent, width = 12, height = 8, dpi = 300)
-
-average.diet <- ggplot(diet.comp.weeks.avg, aes(x = label, y = avg.diet, fill = species )) +
+## Plot Percent per Fish  
+diet.comp.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.perc, fill = species ))+
   geom_bar(stat = "identity", color = "black", width = 1) +
-  scale_x_discrete(name = "Week", expand = c(0, 0))+
-  scale_y_continuous(name ="Average No. of Prey Items per Stomach", expand = c(0,0)) +
-  labs(fill ="Prey Group") +
-  #scale_fill_manual(name = "Prey Group", values = c("#f7f7f7", "#d9d9d9", "#bdbdbd","#969696", "#636363", "#252525")) +
-  theme_bw() +
-  theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        strip.text = element_blank(), 
-        axis.ticks.length = unit(2, 'mm'),
-        legend.title =  element_text(size = 16, colour = "black"),
-        axis.text.y = element_text(size = 16, colour = "black"),
-        axis.text.x = element_text(size = 16, colour = "black"),
-        axis.title.y = element_text(size = 20, margin = margin(0, 20, 0, 0)),
-        axis.title.x = element_text(size = 20, margin = margin(20, 0, 0, 0)),
-        legend.text = element_text(size = 14),
-        legend.key.size = unit(0.75, 'cm'),
-        panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(8, 5, 5, 5), "mm"))
-
-ggsave("figures/apis_average_diet.png", plot = average.diet, width = 12, height = 8, dpi = 300)
-
-## Reformat the first plot so it can be rearranged
-diet.percent <- ggplot(diet.comp.weeks, aes(x = label, y = perc, fill = species ))+
-  geom_bar(stat = "identity", color = "black", width = 1) +
-  scale_y_continuous(name ="Percent Diet Composition", expand = c(0,0)) +
-  labs(fill ="Prey Group") +
-  #scale_fill_manual(name = "Prey Group", values = c("#f7f7f7", "#d9d9d9", "#bdbdbd","#969696", "#636363", "#252525")) +
+  scale_x_discrete(expand = c(0, 0))+
+  scale_y_continuous(limits = c(0, 100.1), breaks = seq(0, 100, 20), expand = c(0,0)) +
+  labs(y = "Avg. Diet Composition (%)") +
+  scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         strip.text = element_blank(),
-        legend.title =  element_text(size = 18, colour = "black"),
-        legend.text = element_text(size = 14),
+        legend.title =  element_blank(),
+        legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.y = element_text(size = 16, colour = "black"),
-        axis.title.x = element_blank(),axis.text.x=element_blank(),
-        axis.title.y = element_text(size = 20, margin = margin(0, 20, 0, 0)),
+        legend.position = "none",
+        axis.text.y = element_text(size = 20, colour = "black"),
+        axis.text.x = element_text(size = 20, colour = "black"),
+        axis.title.y = element_text(size = 25, margin = margin(0, 20, 0, 0)),
+        axis.title.x = element_blank(),
         panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(8, 5, 5, 5), "mm"))
+        plot.margin = unit(c(0, 5, 10, 5), "mm"))
 
-ggarrange(diet.percent, average.diet, nrow = 2, common.legend = TRUE, legend = "right")
-ggsave("figures/apis_diet_arranged.png", width = 12, height = 10, dpi = 300)
+
+## PANELED VISUALIZATION ========================================
+
+## Create common legend
+legend <- get_legend(diet.comp.plot + theme(legend.position = "right"))
+
+# arrange the three plots in a single row
+diet.grid <- plot_grid(diet.count.plot,
+                       diet.comp.plot,
+                       nrow = 2)
+
+## add legend to grid
+diet.grid.legend <- plot_grid(diet.grid, legend, ncol = 2, rel_widths = c(2, 0.2))
+
+## add common x-axis label
+ggdraw(add_sub(diet.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.5, size = 25))
+
+ggsave("figures/apis_diet_gridded.png", width = 12, height = 12, dpi = 300)
+
+
+
+
+
+
+
+
 
 ## Calculate average diet for fish that fed in first and last two weeks
-diet.comp.weeks<-left_join(diet.cont, effort, by = "trawl") %>%
+diet.comp.weeks <- left_join(diet.cont, effort, by = "trawl") %>%
   select(week, trawl, n.fish, n.diet, diet.count) %>%
-  filter(week <= 21 | week >= 29, diet.count >0) %>%
+  filter(week <= 21 | week >= 29, diet.count > 0) %>%
   mutate(week = ifelse(week <= 21,  "first", "last")) %>%
   group_by(week) %>%
   summarize(sum.diet = sum(diet.count),
