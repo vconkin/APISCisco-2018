@@ -22,7 +22,7 @@ library(dplyr)         # manipulating data
 library(magrittr)      # for %<>%
 library(tidyr)         # transforming data arrangement (tidy data!!)
 library(ggplot2)       # visualizations
-library(lemon)         # for facet_rep_wrap()
+library(cowplot)       # for facet_rep_wrap()
 
 
 ## LOAD DATA ====================================================
@@ -37,12 +37,7 @@ effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") 
 ## DIET DATA PREP ===============================================
 
 ## Calculate sample sizes (no. of larvae with food) by week - save for plotting
-#diet.sample.size.trawl <- left_join(diet.cont, effort) %>% 
-#  group_by(trawl, week) %>% 
-#  filter(diet.count > 0) %>%
-#  summarize(n.fish = sum(n.diet))
-
-diet.sample.size.week <- left_join(diet.cont, effort) %>% 
+diet.sample.size <- left_join(diet.cont, effort) %>% 
   group_by(week) %>% 
   filter(diet.count > 0) %>%
   summarize(n.fish = sum(n.diet))
@@ -78,15 +73,15 @@ diet.comp <- diet.cont.species %>% mutate("Calanoid copepodid" = Cal_Copepodite,
 
 ## Group by weeks and summarize
 diet.comp.week <- left_join(diet.comp, effort, by = "trawl") %>%
-  left_join(diet.sample.size.week) %>% 
+  left_join(diet.sample.size) %>% 
   filter(!is.na(n.fish)) %>% 
   group_by(week, species) %>%
   summarize(n.fish = unique(n.fish),
             diet.count = sum(diet.count)) %>% 
-  mutate(diet.count.scaled = diet.count/n.fish) %>% 
+  mutate(diet.count.indiv = diet.count/n.fish) %>% 
   group_by(week) %>%
-  mutate(diet.total = sum(diet.count.scaled)) %>% 
-  mutate(diet.perc = round((diet.count.scaled/diet.total)*100, 2)) %>% ungroup() %>% 
+  mutate(diet.total = sum(diet.count.indiv)) %>% 
+  mutate(diet.perc = round((diet.count.indiv/diet.total)*100, 2)) %>% ungroup() %>% 
   mutate(label = paste0(week,'\n(', n.fish, ")"),
          label = factor(label, ordered = TRUE))
 
@@ -108,7 +103,7 @@ diet.comp.week$species <- gsub('Other', "OT", diet.comp.week$species)
 color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "#cc79a7")
 
 ## Plot Number per Fish  
-diet.count.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.count.scaled, fill = species )) +
+diet.count.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.count.indiv, fill = species )) +
   geom_bar(stat = "identity", color = "black", width = 1) +
   scale_x_discrete(expand = c(0, 0))+
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20), expand = c(0,0)) +
@@ -167,34 +162,4 @@ diet.grid.legend <- plot_grid(diet.grid, legend, ncol = 2, rel_widths = c(2, 0.2
 ## add common x-axis label
 ggdraw(add_sub(diet.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.5, size = 25))
 
-ggsave("figures/apis_diet_gridded.png", width = 12, height = 12, dpi = 300)
-
-
-
-
-
-
-
-
-
-## Calculate average diet for fish that fed in first and last two weeks
-diet.comp.weeks <- left_join(diet.cont, effort, by = "trawl") %>%
-  select(week, trawl, n.fish, n.diet, diet.count) %>%
-  filter(week <= 21 | week >= 29, diet.count > 0) %>%
-  mutate(week = ifelse(week <= 21,  "first", "last")) %>%
-  group_by(week) %>%
-  summarize(sum.diet = sum(diet.count),
-            n.diet = sum(n.diet),
-            avg.diet = (sum.diet/n.diet),
-            sd.diet = sd(diet.count)) %>% ungroup() 
-
-
-## Sample size for first and last two weeks
-avg.diet.sample.size <- diet.sample.size %>% filter(week <=21 | week >=29) %>%
-  mutate(week = (ifelse(week <= "21", "first", "last"))) %>%
-  group_by(week) %>%
-  summarize(n.trawl = sum(n.trawl))
-
-avg.diet.weeks <- diet.comp.weeks %>% 
-  left_join(avg.diet.sample.size, by = "week") %>% 
-  mutate(se.diet = sd.diet / sqrt(n.trawl)) %>% ungroup()
+ggsave("figures/apis_diet_weekly_gridded.png", width = 12, height = 12, dpi = 300)
