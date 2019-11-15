@@ -39,23 +39,22 @@ larval.tl.freq <- larval.tl %>% group_by(week, tl.bin) %>%
 
 ## Expand week numbers to date ranges
 
-larval.tl.freq$week <- gsub('23', 'June 4-5', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('20', 'May 14-15', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('25', 'June 18-20', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('30', 'July 23-25', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('21', 'May 21-23', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('29', 'July 16-17', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('22', 'May 29', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('24', 'June 12-13', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('27', 'July 2-5', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('28', 'July 9-11', larval.tl.freq$week)
-larval.tl.freq$week <- gsub('26', 'June 26-28', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('23', 'June 4', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('20', 'May 14', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('30', 'July 23', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('21', 'May 21', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('29', 'July 16', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('24', 'June 11', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('27', 'July 2', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('28', 'July 9', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('22', 'May 28', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('25', 'June 18', larval.tl.freq$week)
+larval.tl.freq$week <- gsub('26', 'June 25', larval.tl.freq$week)
 
-larval.tl.freq %<>% mutate(week = factor(week, levels = c('May 14-15', 'May 21-23', 'May 29','June 4-5', 
-                                                          'June 12-13', 'June 18-20','June 26-28', 'July 2-5',
-                                                          'July 9-11','July 16-17', 'July 23-25'),
+larval.tl.freq %<>% mutate(week = factor(week, levels = c('May 14', 'May 21', 'May 28','June 4', 
+                                                          'June 11', 'June 18','June 25', 'July 2',
+                                                          'July 9','July 16', 'July 23'),
                                          ordered = TRUE))
-
 
 
 ## Visualization =============================================

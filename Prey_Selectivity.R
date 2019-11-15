@@ -204,22 +204,22 @@ larval.selectivity.week$species <- gsub('Nauplii', 'NA', larval.selectivity.week
 
 
 ## Expand week numbers to date ranges
-larval.selectivity.week$week <- gsub('23', 'June 4-5', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('20', 'May 14-15', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('25', 'June 18-20', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('30', 'July 23-25', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('21', 'May 21-23', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('29', 'July 16-17', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('22', 'May 29', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('24', 'June 12-13', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('27', 'July 2-5', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('28', 'July 9-11', larval.selectivity.week$week)
-larval.selectivity.week$week <- gsub('26', 'June 26-28', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('23', 'June 4', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('20', 'May 14', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('30', 'July 23', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('21', 'May 21', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('29', 'July 16', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('24', 'June 11', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('27', 'July 2', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('28', 'July 9', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('22', 'May 28', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('25', 'June 18', larval.selectivity.week$week)
+larval.selectivity.week$week <- gsub('26', 'June 25', larval.selectivity.week$week)
 
-larval.selectivity.week %<>% mutate(week = factor(week, levels = c('May 14-15', 'May 21-23', 'May 29','June 4-5', 
-                                                             'June 12-13', 'June 18-20','June 26-28', 'July 2-5',
-                                                             'July 9-11','July 16-17', 'July 23-25'),
-                                            ordered = TRUE))
+larval.selectivity.week %<>% mutate(week = factor(week, levels = c('May 14', 'May 21', 'May 28','June 4', 
+                                                          'June 11', 'June 18','June 25', 'July 2',
+                                                          'July 9','July 16', 'July 23'),
+                                         ordered = TRUE))
 
 
 ## Calculate alpha (preference/avoidance) and E (maximum selection) thresholds
