@@ -47,17 +47,31 @@ zoop %<>% mutate(taxa.group.2 = ifelse(species == "Acanthocyclops", "  Cyclopoid
   
 
 ## Summarize weekly and weekly proporational density and biomass for each taxa group
+options(scipen=999)
 weekly.data <- zoop %>% group_by(week, station, taxa.group.2) %>%
   summarize(sum.density = sum(density.l), 
             sum.biomass = sum(biomass.dry.wt.ugL)) %>% 
   group_by(week, taxa.group.2) %>% 
   summarize(mean.density = mean(sum.density), 
-            mean.biomass = mean(sum.biomass)) %>% 
+            mean.biomass = mean(sum.biomass),
+            sd.density = sd(sum.density),
+            sd.biomass = sd(sum.biomass),
+            se.density = sd.density/sqrt(n()),
+            se.biomass = sd.biomass/sqrt(n())) %>% 
   group_by(week) %>% 
   mutate(sum.density = sum(mean.density), 
          sum.biomass = sum(mean.biomass),
          prop.density = mean.density/sum.density,
          prop.biomass = mean.biomass/sum.biomass)
+
+weekly.data.total <- zoop %>% group_by(week, station) %>%
+  summarize(sum.density = sum(density.l), 
+            sum.biomass = sum(biomass.dry.wt.ugL)) %>% 
+  group_by(week) %>% 
+  summarize(mean.density = round(mean(sum.density),3), 
+            mean.biomass = round(mean(sum.biomass),3),
+            se.density = round(sd(sum.density)/sqrt(n()),3),
+            se.biomass = round(sd(sum.biomass)/sqrt(n()),3))
 
 
 ## ABBREVIATE TAXA NAMES ========================================
@@ -72,6 +86,26 @@ weekly.data$taxa.group.2 <- gsub('Nauplii', "NA", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Other Cladocera', "OC", weekly.data$taxa.group.2)
 
 
+## EXPAND WEEK LABELS ===========================================
+
+weekly.data$week <- gsub('20', 'May 14', weekly.data$week)
+weekly.data$week <- gsub('25', 'June 18', weekly.data$week)
+weekly.data$week <- gsub('23', 'June 4', weekly.data$week)
+weekly.data$week <- gsub('30', 'July 23', weekly.data$week)
+weekly.data$week <- gsub('21', 'May 21', weekly.data$week)
+weekly.data$week <- gsub('29', 'July 16', weekly.data$week)
+weekly.data$week <- gsub('28', 'July 9', weekly.data$week)
+weekly.data$week <- gsub('22', 'May 28', weekly.data$week)
+weekly.data$week <- gsub('24', 'June 11', weekly.data$week)
+weekly.data$week <- gsub('27', 'July 2', weekly.data$week)
+weekly.data$week <- gsub('26', 'June 25', weekly.data$week)
+
+weekly.data %<>% mutate(week = factor(week, levels = c('May 14', 'May 21', 'May 28','June 4',
+                                                       'June 11', 'June 18','June 25', 'July 2',
+                                                       'July 9','July 16', 'July 23'),
+                                      ordered = TRUE))
+
+
 ## VISUALIZATION ================================================
 
 ## Define a colorblind safe(ish) palette for 7-classes
@@ -80,47 +114,52 @@ color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d5
 ## Mean density
 zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
   geom_line(aes(colour = taxa.group.2), size = 1) +
-  geom_point(size = 1.5) +
+  geom_point(size = 2.5, aes(shape = taxa.group.2)) +
   scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_color_manual(values = color) +
+  scale_shape_manual(values = c(15, 16, 17, 18, 9, 10, 8, 1)) +
   labs(x = 'Week', y = 'Mean Density (#/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
         legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 20),
+        axis.text.x = element_blank(),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(5, 10, 10, 5), 'mm'))
+        plot.margin = unit(c(8, 5, 15, 5), 'mm'))
 
 ## Mean biomass
 zoop.biomass <- ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
   geom_line(aes(colour = taxa.group.2), size = 1) +
-  geom_point(size = 1.5) +
-  scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
+  geom_point(size = 2.5, aes(shape = taxa.group.2)) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_color_manual(values = color) +
+  scale_shape_manual(values = c(15, 16, 17, 18, 9, 10, 8, 1)) +
   labs(x = 'Week', y = 'Mean Biomass (µg dry/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
         legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 20),
+        axis.text.x = element_blank(),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 10, 10), 'mm'))
+        plot.margin = unit(c(8, 5, 15, 5), 'mm'))
 
 ## Proportional stacked area plot of density
 zoop.prop.density <- ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
   geom_area(position = "fill", color = "black") + 
-  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0),
+                     labels = c('May 14', 'May 21', 'May 28','June 4',
+                                'June 11', 'June 18','June 25', 'July 2',
+                                'July 9','July 16', 'July 23')) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
   scale_fill_manual(values = color) +
   labs(x = 'Week', y = 'Proportional Density') +
@@ -129,17 +168,20 @@ zoop.prop.density <- ggplot(weekly.data, aes(x = week, y = prop.density, fill = 
         legend.title = element_blank(),
         legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 20),
+        axis.text.x = element_text(size = 20, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(5, 10, 10, 5), 'mm'))
+        plot.margin = unit(c(-5, 5, 5, 5), 'mm'))
 
 ## Proportional stacked area plot of biomass
 zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
   geom_area(stat = "identity", position = "fill", color = "black") + 
-  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0),
+                     labels = c('May 14', 'May 21', 'May 28','June 4',
+                                'June 11', 'June 18','June 25', 'July 2',
+                                'July 9','July 16', 'July 23')) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
   scale_fill_manual(values = color) +
   labs(x = 'Week', y = 'Proportional Biomass') +
@@ -148,12 +190,13 @@ zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = 
         legend.title = element_blank(),
         legend.text = element_text(size = 15),
         legend.key.size = unit(0.75, 'cm'),
-        axis.text.x = element_text(size = 20),
+        axis.text.x = element_text(size = 20, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(5, 5, 10, 10), 'mm'))
+        plot.margin = unit(c(-5, 5, 5, 5), 'mm'))
+
 
 ## PANELED VISUALIZATION ========================================
 
