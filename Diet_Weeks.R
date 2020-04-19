@@ -29,7 +29,7 @@ library(cowplot)       # for facet_rep_wrap()
 
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet") %>%
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
-effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston_Effort") %>% 
   select(trawl, week) %>%
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
 
@@ -81,9 +81,7 @@ diet.comp.week <- left_join(diet.comp, effort, by = "trawl") %>%
   mutate(diet.count.indiv = diet.count/n.fish) %>% 
   group_by(week) %>%
   mutate(diet.total = sum(diet.count.indiv)) %>% 
-  mutate(diet.perc = round((diet.count.indiv/diet.total)*100, 2)) %>% ungroup() %>% 
-  mutate(label = paste0(week,'\n(', n.fish, ")"),
-         label = factor(label, ordered = TRUE))
+  mutate(diet.perc = round((diet.count.indiv/diet.total)*100, 2)) %>% ungroup()
 
 
 ## ABBREVIATE TAXA NAMES ========================================
@@ -95,6 +93,26 @@ diet.comp.week$species <- gsub('Calanoid copepodid', "CA*", diet.comp.week$speci
 diet.comp.week$species <- gsub('Holopedium', "HO", diet.comp.week$species)
 diet.comp.week$species <- gsub('Nauplii', "NA", diet.comp.week$species)
 diet.comp.week$species <- gsub('Other', "OT", diet.comp.week$species)
+
+
+## EXPAND WEEK LABELS ===========================================
+
+diet.comp.week$week <- gsub('20', 'May 14', diet.comp.week$week)
+diet.comp.week$week <- gsub('25', 'June 18', diet.comp.week$week)
+diet.comp.week$week <- gsub('23', 'June 4', diet.comp.week$week)
+diet.comp.week$week <- gsub('30', 'July 23', diet.comp.week$week)
+diet.comp.week$week <- gsub('21', 'May 21', diet.comp.week$week)
+diet.comp.week$week <- gsub('29', 'July 16', diet.comp.week$week)
+diet.comp.week$week <- gsub('28', 'July 9', diet.comp.week$week)
+diet.comp.week$week <- gsub('22', 'May 28', diet.comp.week$week)
+diet.comp.week$week <- gsub('24', 'June 11', diet.comp.week$week)
+diet.comp.week$week <- gsub('27', 'July 2', diet.comp.week$week)
+diet.comp.week$week <- gsub('26', 'June 25', diet.comp.week$week)
+
+diet.comp.week %<>% mutate(label = paste0(week,'\n(', n.fish, ")"),
+                           label = factor(label, levels = c('May 14\n(4)', 'May 21\n(4)', 'May 28\n(39)','June 4\n(11)', 
+                                                          'June 11\n(194)', 'June 18\n(58)','June 25\n(7)', 'July 2\n(24)',
+                                                          'July 9\n(45)','July 16\n(82)', 'July 23\n(10)'), ordered = TRUE))
 
 
 ## VISUALIZATION ================================================
@@ -111,18 +129,17 @@ diet.count.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.count.indiv, f
   scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        strip.text = element_blank(), 
-        axis.ticks.length = unit(2, 'mm'),
-        axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 20, colour = "black"),
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 25, margin = margin(0, 20, 0, 0)),
-        legend.text = element_text(size = 15),
-        legend.title = element_blank(),
-        legend.key.size = unit(0.75, 'cm'),
+        strip.text = element_blank(),
+        legend.title =  element_blank(),
+        legend.text = element_text(size = 20),
+        legend.key.size = unit(1.25, 'cm'),
         legend.position = "none",
+        axis.text.y = element_text(size = 22, colour = "black"),
+        axis.text.x = element_blank(),
+        axis.title.y = element_text(size = 25, margin = margin(0, 20, 0, 0)),
+        axis.title.x = element_blank(),
         panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(8, 5, 15, 5), "mm"))
+        plot.margin = unit(c(5, 5, 25, 5), "mm"))
 
 ## Plot Percent per Fish  
 diet.comp.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.perc, fill = species ))+
@@ -135,21 +152,21 @@ diet.comp.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.perc, fill = sp
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         strip.text = element_blank(),
         legend.title =  element_blank(),
-        legend.text = element_text(size = 15),
-        legend.key.size = unit(0.75, 'cm'),
+        legend.text = element_text(size = 20),
+        legend.key.size = unit(1.25, 'cm'),
         legend.position = "none",
-        axis.text.y = element_text(size = 20, colour = "black"),
-        axis.text.x = element_text(size = 20, colour = "black"),
+        axis.text.y = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(size = 22, colour = "black"),#, angle = 45, hjust = 1),
         axis.title.y = element_text(size = 25, margin = margin(0, 20, 0, 0)),
         axis.title.x = element_blank(),
         panel.spacing = unit(2, "lines"),
-        plot.margin = unit(c(0, 5, 10, 5), "mm"))
+        plot.margin = unit(c(-10, 5, 10, 5), "mm"))
 
 
 ## PANELED VISUALIZATION ========================================
 
 ## Create common legend
-legend <- get_legend(diet.comp.plot + theme(legend.position = "right"))
+legend <- get_legend(diet.comp.plot + theme(legend.position = c(0.5, 0.56)))
 
 # arrange the three plots in a single row
 diet.grid <- plot_grid(diet.count.plot,
@@ -160,6 +177,7 @@ diet.grid <- plot_grid(diet.count.plot,
 diet.grid.legend <- plot_grid(diet.grid, legend, ncol = 2, rel_widths = c(2, 0.2))
 
 ## add common x-axis label
-ggdraw(add_sub(diet.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.5, size = 25))
+ggdraw(add_sub(diet.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.495, size = 30))
 
-ggsave("figures/apis_diet_weekly_gridded.png", width = 12, height = 12, dpi = 300)
+ggsave("figures/apis_diet_weekly_gridded.png", width = 16, height = 13, dpi = 300)
+
