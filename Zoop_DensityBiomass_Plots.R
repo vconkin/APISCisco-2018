@@ -89,15 +89,16 @@ weekly.data$taxa.group.2 <- gsub('Other Cladocera', "OC", weekly.data$taxa.group
 
 ## Define a colorblind safe(ish) palette for 7-classes
 color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "#cc79a7")
+shape <- c(9, 10, 8, 1, 15, 16, 17, 18)
 
 ## Mean density
 zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
   geom_line(aes(colour = taxa.group.2), size = 1) +
-  geom_point(size = 2.5) + #, aes(shape = taxa.group.2)) +
-  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
+  geom_point(size = 3.5, aes(shape = taxa.group.2)) +
+  scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 3.5, 0.5), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_color_manual(values = color) +
-  #scale_shape_manual(values = c(15, 16, 17, 18, 9, 10, 8, 1)) +
+  scale_shape_manual(values = shape) +
   labs(x = 'Week', y = 'Mean Density (#/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
@@ -109,16 +110,16 @@ zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(8, 5, 15, 5), 'mm'))
+        plot.margin = unit(c(10, 5, 15, 5), 'mm'))
 
 ## Mean biomass
 zoop.biomass <- ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
   geom_line(aes(colour = taxa.group.2), size = 1) +
-  geom_point(size = 2.5) + #, aes(shape = taxa.group.2)) +
-  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
+  geom_point(size = 3.5, aes(shape = taxa.group.2)) +
+  scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 3.5, 0.5), labels = scales::number_format(accuracy = 0.01), expand = c(0, 0)) +
   scale_x_continuous(limits = c(20, 30), breaks = seq(20, 30, 1), expand = c(0, 0)) +
   scale_color_manual(values = color) +
-  #scale_shape_manual(values = c(15, 16, 17, 18, 9, 10, 8, 1)) +
+  scale_shape_manual(values = shape) +
   labs(x = 'Week', y = 'Mean Biomass (µg dry/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
@@ -130,7 +131,7 @@ zoop.biomass <- ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(8, 5, 15, 5), 'mm'))
+        plot.margin = unit(c(10, 5, 15, 5), 'mm'))
 
 ## Proportional stacked area plot of density
 zoop.prop.density <- ggplot(weekly.data, aes(x = week, y = prop.density, fill = taxa.group.2)) +
@@ -152,7 +153,7 @@ zoop.prop.density <- ggplot(weekly.data, aes(x = week, y = prop.density, fill = 
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(-5, 5, 5, 5), 'mm'))
+        plot.margin = unit(c(-2, 5, 5, 5), 'mm'))
 
 ## Proportional stacked area plot of biomass
 zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = taxa.group.2)) +
@@ -174,27 +175,36 @@ zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = 
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(10, 0, 0, 0)),
         axis.ticks.length = unit(2.0, 'mm'), 
-        plot.margin = unit(c(-5, 5, 5, 5), 'mm'))
+        plot.margin = unit(c(-2, 5, 5, 5), 'mm'))
 
 
 ## PANELED VISUALIZATION ========================================
 
 ## Create common legend
-legend <- get_legend(zoop.prop.density + theme(legend.position = c(0.5, 0.56)))
+legend.mean <- get_legend(zoop.density + theme(legend.position = c(0.5, 0.535)))
+legend.prop <- get_legend(zoop.prop.density + theme(legend.position = c(0.5, 0.64)))
 
 # arrange the three plots in a single row
 zoop.grid <- plot_grid(zoop.density + theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank()),
                        zoop.biomass + theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank()),
-                       zoop.prop.density + theme(legend.position = "none", axis.title.x = element_blank()),
-                       zoop.prop.biomass + theme(legend.position = "none", axis.title.x = element_blank()),
-                       nrow = 2
-)
+                       nrow = 1)
 
 ## add legend to grid
-zoop.grid.legend <- plot_grid(zoop.grid, legend, ncol = 2, rel_widths = c(2, 0.2))
+zoop.grid.legend <- plot_grid(zoop.grid, legend.mean, ncol = 2, rel_widths = c(2, 0.2))
 
+# arrange the three plots in a single row
+zoop.grid2 <- plot_grid(zoop.prop.density + theme(legend.position = "none", axis.title.x = element_blank()),
+                        zoop.prop.biomass + theme(legend.position = "none", axis.title.x = element_blank()),
+                        nrow = 1)
+
+## add legend to grid
+zoop.grid.legend2 <- plot_grid(zoop.grid2, legend.prop, ncol = 2, rel_widths = c(2, 0.2))
+
+## combine plots
+zoop.grid.all <- plot_grid(zoop.grid.legend, zoop.grid.legend2, nrow = 2, rel_widths = c(2, 0.2))
+  
 ## add common x-axis label
-ggdraw(add_sub(zoop.grid.legend, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.48, size = 30))
+ggdraw(add_sub(zoop.grid.all, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.48, size = 30))
 
 ggsave("figures/apis_zoop_gridded.png", width = 18, height = 10, dpi = 300)
 
