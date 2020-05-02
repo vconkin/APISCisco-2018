@@ -80,8 +80,9 @@ ggplot(larval.tl.freq, aes(x = tl.bin, y = n.tl)) +
         axis.title.x = element_text(size = 21, margin = margin(15, 0, 0, 0)),
         axis.ticks.length = unit(1.25, 'mm'),
         strip.text = element_text(size = 13),
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(-0.25, "lines")) +
   facet_rep_wrap(~week, dir = "v", ncol = 2)
 
 ## Save figure
-ggsave("figures/apis_larval_freq_length_weekly.png", dpi = 300, width = 8, height = 10)
+ggsave("figures/Fig_3_length_freq.tiff", dpi = 300, width = 8, height = 10)

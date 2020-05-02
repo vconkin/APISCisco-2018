@@ -25,7 +25,6 @@ library(gtable)        # plot matrix legend
 zoop <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
 
 
-
 ## DATA MANIPULATION ============================================
 
 zoop %<>% mutate(taxa.group.2 = ifelse(species == "Acanthocyclops", "  Cyclopoids",
@@ -35,7 +34,7 @@ zoop %<>% mutate(taxa.group.2 = ifelse(species == "Acanthocyclops", "  Cyclopoid
                                 ifelse(species == "Diacyclops", "  Cyclopoids",
                                 ifelse(species == "Diaphanosoma", "  Other Cladocera",
                                 ifelse(species == "Epischura", "  Calanoids",
-                                ifelse(species == "Holopedium", "  Other Cladocera",
+                                ifelse(species == "Holopedium", "  Holopedium",
                                 ifelse(species == "Limnocalanus", "  Calanoids",
                                 ifelse(species == "Leptodiaptomus", "  Calanoids",
                                 ifelse(species == "Mesocyclops", "  Cyclopoids",
@@ -79,17 +78,19 @@ weekly.data$taxa.group.2 <- gsub('Cyclopoids', "CY", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Cyclopoid Copepodites', "CY*", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Bythotrephes', "BY", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Daphnia', "DA", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Holopedium', "HO", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Calanoids', "CA", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Calanoid Copepodites', "CA*", weekly.data$taxa.group.2)
 weekly.data$taxa.group.2 <- gsub('Nauplii', "NA", weekly.data$taxa.group.2)
-weekly.data$taxa.group.2 <- gsub('Other Cladocera', "OC", weekly.data$taxa.group.2)
+weekly.data$taxa.group.2 <- gsub('Other Cladocera', "OT", weekly.data$taxa.group.2)
 
 
 ## VISUALIZATION ================================================
 
 ## Define a colorblind safe(ish) palette for 7-classes
-color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "#cc79a7")
-shape <- c(9, 10, 8, 1, 15, 16, 17, 18)
+#color <- c("gray30", "#cc79a7", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "black")
+color <- c("#000000", "#F0E442", "#56B4E9", "#CC79A7", "#009E73", "#D55E00", "#E69F00", "#0072B2", "gray40")
+shape <- c(9, 10, 8, 1, 13, 15, 16, 17, 18)
 
 ## Mean density
 zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
@@ -104,7 +105,8 @@ zoop.density <- ggplot(weekly.data, aes(x = week, y = mean.density)) +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
         legend.title = element_blank(),
         legend.text = element_text(size = 20),
-        legend.key.size = unit(1.0, 'cm'),
+        legend.key.height = unit(1.0, 'cm'),
+        legend.key.width = unit(2.0, 'cm'),
         axis.text.x = element_blank(),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
@@ -123,9 +125,6 @@ zoop.biomass <- ggplot(weekly.data, aes(x = week, y = mean.biomass)) +
   labs(x = 'Week', y = 'Mean Biomass (µg dry/L)') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title = element_blank(),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1.0, 'cm'),
         axis.text.x = element_blank(),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
@@ -167,9 +166,6 @@ zoop.prop.biomass <- ggplot(weekly.data, aes(x = week, y = prop.biomass, fill = 
   labs(x = 'Week', y = 'Proportional Biomass') +
   theme_bw() + 
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
-        legend.title = element_blank(),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1.0, 'cm'),
         axis.text.x = element_text(size = 20, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 20),
         axis.title.y = element_text(size = 25, margin = margin(0, 10, 0, 0)),
@@ -206,5 +202,5 @@ zoop.grid.all <- plot_grid(zoop.grid.legend, zoop.grid.legend2, nrow = 2, rel_wi
 ## add common x-axis label
 ggdraw(add_sub(zoop.grid.all, "Week", vpadding = grid::unit(0,"lines"), y = 0.75, x = 0.48, size = 30))
 
-ggsave("figures/apis_zoop_gridded.png", width = 18, height = 10, dpi = 300)
+ggsave("figures/Fig_2_zoop.tiff", width = 18, height = 10, dpi = 300)
 

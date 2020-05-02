@@ -29,7 +29,7 @@ library(lemon)         # for facet_rep_wrap()
 
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet")
 envir.prey <- read.csv("data/APIS_Zooplankton_2018.csv", header = TRUE)
-effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston_Effort") %>% 
   select(trawl, week)
 
 
@@ -238,47 +238,30 @@ larval.selectivity.week.zero <- larval.selectivity.week %>%
 
 ## Visualization ================================================
 
-## Plot Selectivity  
-ggplot(larval.selectivity.week, aes(x = species, y = mean.alpha, group = species)) +
-  geom_bar(stat = "identity", color = "black", fill = "gray80", width = 1) +
-  geom_errorbar(aes(ymin = mean.alpha + se.alpha, ymax = mean.alpha - se.alpha), width = 0.3) +
-  geom_hline(data = larval.selectivity.threshold, aes(yintercept = alpha.threshold), linetype = 'dashed') +
-  geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.06), label = "nf", size = 3) +
-  scale_y_continuous(limits = c(0,1), expand = c(0, 0))+
-  labs(x = "Prey Taxa", y = "Selectivity Index (W')") +
-  theme(panel.grid = element_blank(), panel.background = element_blank(),
-        panel.spacing = unit(1, "lines"), axis.line = element_line(),
-        axis.text.x = element_text(size = 13),
-        axis.text.y = element_text(size = 15),
-        axis.title.y = element_text(size = 25, margin = margin(0, 18, 0, 0)),
-        axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
-        axis.ticks.length = unit(1.25, 'mm'),
-        strip.text = element_text(size = 13),
-        strip.background = element_blank()) +
-  facet_rep_wrap(~week, dir = "v", ncol = 2)
-
-ggsave("figures/apis_larval_selectivity_alpha_weekly.png", dpi = 300, width = 10, height = 10)
-
 ## Plot Electivity  
-ggplot(larval.selectivity.week, aes(x = species, y = mean.E, group = species)) +
+ggplot(larval.selectivity.week, aes(x = week, y = mean.E, group = 1)) +
+  #geom_point(color = "black", size = 2) +
+  #geom_line() +
   geom_bar(stat = "identity", color = "black", fill = "gray80", width = 1) +
   geom_errorbar(data = filter(larval.selectivity.week, se.E != 0), 
                 aes(ymin = mean.E + se.E, ymax = mean.E - se.E), width = 0.3) +
   geom_hline(yintercept = 0) +
-  geom_hline(data = larval.selectivity.threshold, aes(yintercept = E.threshold), linetype = 'dashed') +
-  geom_text(data = larval.selectivity.week.zero, aes(x = species, y = 0.115), label = "nf", size = 3) +
+  geom_point(data = larval.selectivity.threshold, aes(x = week, y = E.threshold, group = week), shape = 3) +
+  #geom_hline(data = larval.selectivity.threshold, aes(yintercept = E.threshold), linetype = 'dashed') +
+  geom_text(data = larval.selectivity.week.zero, aes(x = week, y = 0.1), label = "nf", size = 3) +
   scale_y_continuous(limits = c(-1, 1), expand = c(0, 0))+
-  labs(x = "Prey Taxa", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
+  labs(x = "Week", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
         panel.spacing = unit(1, "lines"), axis.line = element_line(),
-        axis.text.x = element_text(size = 13),
+        axis.text.x = element_text(size = 13, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 15),
         axis.title.y = element_text(size = 25, margin = margin(0, 15, 0, 0)),
         axis.title.x = element_text(size = 25, margin = margin(15, 0, 0, 0)),
         axis.ticks.length = unit(1.25, 'mm'),
         strip.text = element_text(size = 13),
-        strip.background = element_blank()) +
-  facet_rep_wrap(~week, dir = "v", ncol = 2)
+        strip.background = element_blank(), 
+        panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(-2, "lines")) +
+  facet_rep_wrap(~species, dir = "v", ncol = 2)
 
-ggsave("figures/apis_larval_selectivity_E_weekly.png", dpi = 300, width = 10, height = 10)
+ggsave("figures/Fig_8_electivity.tiff", dpi = 300, width = 10, height = 10)
 

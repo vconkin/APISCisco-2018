@@ -30,7 +30,7 @@ library(cowplot)       # for facet_rep_wrap()
 
 diet.cont <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet") %>%
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
-effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston_Effort") %>% 
   select(trawl, week) %>%
   mutate(trawl = as.numeric(ifelse(trawl == "37.1", "37", trawl)))
 
@@ -59,13 +59,13 @@ diet.comp <- diet.cont.species %>% mutate("Calanoid copepodid" = Cal_Copepodite,
                                             E.lacustrus + Senecella_calanoides + Unknown_Fragment_Cyclopoid,
                                           "Cyclopoidae" = Acanthocyclops + Diacyclops_thomasi + 
                                             Eucyclops + Unknown_Fragment_Cyclopoid,
-                                          "Other" = Daphnia + Bosmina + Invertebrate_eggs + Chironomid_pupae + 
-                                            Rotifera + Bythotrephes + Diaphanosoma + Leptodora_kindi) %>%
+                                          "Other" = Bosmina + Invertebrate_eggs + Chironomid_pupae + 
+                                            Rotifera + Diaphanosoma + Leptodora_kindi) %>%
   select(-Acanthocyclops, -Diacyclops_thomasi, -Eucyclops, -Cyc_Copepodite,
          -L.minutus, -L.sicilis, -Limnocalanus_macrurus, -E.lacustrus, 
          -Senecella_calanoides, -Cal_Copepodite, -Unknown_Fragment_Calanoid, 
          -Unknown_Fragment_Cyclopoid, -Invertebrate_eggs, -Chironomid_pupae, 
-         -Rotifera, -Daphnia, -Bosmina, -Bythotrephes, -Diaphanosoma, -Leptodora_kindi) %>%
+         -Rotifera, -Bosmina, -Diaphanosoma, -Leptodora_kindi) %>%
   gather(species, diet.count, Nauplii:Other) %>% droplevels() %>% 
   filter(diet.count != 0)
 
@@ -88,9 +88,11 @@ diet.comp.length <- left_join(diet.comp, effort, by = "trawl") %>%
 
 diet.comp.length$species <- gsub('Cyclopoidae', "CY", diet.comp.length$species)
 diet.comp.length$species <- gsub('Cyclopoid copepodid', "CY*", diet.comp.length$species)
+diet.comp.length$species <- gsub('Bythotrephes', "BY", diet.comp.length$species)
+diet.comp.length$species <- gsub('Daphnia', "DA", diet.comp.length$species)
+diet.comp.length$species <- gsub('Holopedium', "HO", diet.comp.length$species)
 diet.comp.length$species <- gsub('Calanoidae', "CA", diet.comp.length$species)
 diet.comp.length$species <- gsub('Calanoid copepodid', "CA*", diet.comp.length$species)
-diet.comp.length$species <- gsub('Holopedium', "HO", diet.comp.length$species)
 diet.comp.length$species <- gsub('Nauplii', "NA", diet.comp.length$species)
 diet.comp.length$species <- gsub('Other', "OT", diet.comp.length$species)
 
@@ -117,7 +119,8 @@ diet.comp.length.last <- diet.comp.length %>% filter(week.bin == "last") %>%
 
 ## VISUALIZATION ================================================
 ## Define a colorblind safe(ish) palette for 7-classes
-color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00", "#cc79a7")
+#color <- c("gray30", "#e69f00", "#56b4e9", "#009e73", "#f0e442", "#0072b2", "#d55e00")
+color <- c("#000000", "#F0E442", "#56B4E9", "#CC79A7", "#009E73", "#D55E00", "#E69F00", "#0072B2", "gray40")
 
 
 diet.comp.pre <- ggplot(diet.comp.length.first, aes(x = label, y = diet.perc, fill = species))+
@@ -139,7 +142,6 @@ diet.comp.pre <- ggplot(diet.comp.length.first, aes(x = label, y = diet.perc, fi
         legend.position = "none",
         panel.spacing = unit(2, "lines"),
         plot.margin = unit(c(5, 5, 8, 5), "mm"))
-diet.comp.pre
 
 diet.comp.post <- ggplot(diet.comp.length.last, aes(x = label, y = diet.perc, fill = species))+
   geom_bar(stat = "identity", color = "black", width = 1) +
@@ -160,7 +162,6 @@ diet.comp.post <- ggplot(diet.comp.length.last, aes(x = label, y = diet.perc, fi
         legend.position = "none",
         panel.spacing = unit(2, "lines"),
         plot.margin = unit(c(5, 5, 8, 5), "mm"))
-diet.comp.post
 
 
 ## PANELED VISUALIZATION ========================================
@@ -179,4 +180,5 @@ diet.grid.legend <- plot_grid(diet.grid, legend, ncol = 2, rel_widths = c(2, 0.2
 ## add common x-axis label
 ggdraw(add_sub(diet.grid.legend, "Length Classes (mm)", vpadding = grid::unit(0,"lines"), y = 0.85, x = 0.5, size = 25))
 
-ggsave("figures/apis_diet_length_gridded.png", width = 14, height = 10, dpi = 300)
+ggsave("figures/Fig_7_diet_length.tiff", width = 14, height = 10, dpi = 300)
+

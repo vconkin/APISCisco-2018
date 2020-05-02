@@ -47,7 +47,7 @@ larval.diet <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Larval_Diet"
          trawl = factor(ifelse(trawl == "37.1", "37", trawl)))
 
 ## Tow effort (to match trawl numbers with week)
-effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston Effort") %>% 
+effort <- read_excel("data/APIS_Coregonus_2018.xlsx", sheet = "Neuston_Effort") %>% 
   dplyr::select(trawl, week) %>% 
   mutate(trawl = factor(trawl))
 
@@ -164,14 +164,4 @@ ggplot(larval.yolk.diet.all.prob, aes(x = label, y = perc, fill = group)) +
         plot.margin = unit(c(8, 5, 5, 5), "mm"))
 
 ## Save figure
-ggsave("figures/apis_larval_yolkDiet_all.png", width = 12, height = 8, dpi = 300)
-
-
-## SUPPLEMENTAL ========================================================
-
-## Histogram to see sample size distribution
-ggplot(larval.yolk.diet, aes(x = tl.bin, fill = group)) + 
-  geom_histogram(binwidth = 1, color = "black") +
-  scale_fill_manual(values = c("#e66101", "#fdb863", "#5e3c99", "#b2abd2")) +
-  facet_wrap(~week, ncol = 2, dir = "v")
-
+ggsave("figures/Fig_5_yolkDiet.tiff", width = 12, height = 8, dpi = 300)
