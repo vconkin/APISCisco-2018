@@ -250,7 +250,7 @@ ggplot(larval.selectivity.week, aes(x = week, y = mean.E, group = 1)) +
   #geom_hline(data = larval.selectivity.threshold, aes(yintercept = E.threshold), linetype = 'dashed') +
   geom_text(data = larval.selectivity.week.zero, aes(x = week, y = 0.1), label = "nf", size = 3) +
   scale_y_continuous(limits = c(-1, 1), expand = c(0, 0))+
-  labs(x = "Week", y = expression(paste("Electivity Index (", E["i"]^"*", ")", sep = ""))) +
+  labs(x = "Week", y = expression(paste("Mean Electivity Index (", E["i"]^"*", ")", sep = ""))) +
   theme(panel.grid = element_blank(), panel.background = element_blank(),
         panel.spacing = unit(1, "lines"), axis.line = element_line(),
         axis.text.x = element_text(size = 13, angle = 45, hjust = 1),
