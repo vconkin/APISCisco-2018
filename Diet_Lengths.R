@@ -127,7 +127,7 @@ diet.comp.pre <- ggplot(diet.comp.length.first, aes(x = label, y = diet.perc, fi
   geom_bar(stat = "identity", color = "black", width = 1) +
   scale_x_discrete(expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 100.1), breaks = seq(0, 100, 20), expand = c(0,0)) +
-  labs(x = "Length Class (mm)", y = "Avg. Diet Composition (%)") +
+  labs(x = "Length Class (mm)", y = "Mean Diet Composition (%)") +
   scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
@@ -147,7 +147,7 @@ diet.comp.post <- ggplot(diet.comp.length.last, aes(x = label, y = diet.perc, fi
   geom_bar(stat = "identity", color = "black", width = 1) +
   scale_x_discrete(expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 100.1), breaks = seq(0, 100, 20), expand = c(0,0)) +
-  labs(x = "Length Class (mm)", y = "Avg. Diet Composition (%)") +
+  labs(x = "Length Class (mm)", y = "Mean Diet Composition (%)") +
   scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 

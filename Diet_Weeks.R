@@ -129,7 +129,7 @@ diet.count.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.count.indiv, f
   geom_bar(stat = "identity", color = "black", width = 1) +
   scale_x_discrete(expand = c(0, 0))+
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20), expand = c(0,0)) +
-  labs(y = "Avg. # of Diet Items per Individual") +
+  labs(y = "Mean # of Diet Items per Individual") +
   scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
@@ -150,7 +150,7 @@ diet.comp.plot <- ggplot(diet.comp.week, aes(x = label, y = diet.perc, fill = sp
   geom_bar(stat = "identity", color = "black", width = 1) +
   scale_x_discrete(expand = c(0, 0))+
   scale_y_continuous(limits = c(0, 100.1), breaks = seq(0, 100, 20), expand = c(0,0)) +
-  labs(y = "Avg. Diet Composition (%)") +
+  labs(y = "Mean Diet Composition (%)") +
   scale_fill_manual(values = color) +
   theme_bw() +
   theme(panel.grid = element_blank(), panel.background = element_blank(), 
