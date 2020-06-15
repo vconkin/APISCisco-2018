@@ -54,6 +54,7 @@ diet.cont %<>% select(trawl, Nauplii:Chironomid_pupae) %>%
 ## Make all NAs (blanks) zero
 diet.cont[is.na(diet.cont)] <- 0
 
+
 ## Combine minutus and sicilis to genera, then drop the old columns
 ## Collapse the species columns into two: prey species and count
 diet.comp <- diet.cont %>% mutate(Cyclopidae = Acanthocyclops + Diacyclops_thomasi + Eucyclops,
@@ -103,6 +104,7 @@ diet.cont.species <- diet.comp %>% group_by(trawl, species)%>%
   summarize(diet.count.species = sum(diet.count)) %>%
   ungroup()
 
+
 ## Group by trawl to sum total prey counts for each trawl
 diet.cont.total <- diet.comp %>% group_by(trawl) %>% 
   summarize(diet.count.trawl.total = sum(diet.count))
@@ -131,13 +133,81 @@ envir.prey.all <- envir.prey.filtered %>%
 envir.prey.species <- envir.prey.all %>% group_by(trawl, species)%>%
   summarize(prey.count.species = sum(density.l)) %>% ungroup()
 
+
+
+
+## TEST FOR REVIEW
+envir.cal.cop <- envir.prey.species %>% filter(species == "Calanoid Copepodid") %>% 
+  mutate(envir.count.species.25 = round(prey.count.species * 0.25, 0),
+         envir.count.species.add25 = prey.count.species + envir.count.species.25,
+         envir.count.species.min25 = prey.count.species - envir.count.species.25)
+envir.cal.cop.25 <- envir.cal.cop %>% select(trawl, envir.count.species.25)
+
+envir.cal.add <- envir.prey.species %>% filter(species == "Calanoidae") %>% 
+  left_join(envir.cal.cop.25) %>% 
+  group_by(trawl) %>% 
+  summarize(prey.count.species = prey.count.species + envir.count.species.25) %>% 
+  mutate(species = "Calanoidae")
+envir.cal.min <- envir.prey.species %>% filter(species == "Calanoidae") %>% 
+  left_join(envir.cal.cop.25) %>% 
+  group_by(trawl) %>% 
+  summarize(prey.count.species = prey.count.species - envir.count.species.25) %>% 
+  mutate(species = "Calanoidae")
+
+
+envir.cyc.cop <- envir.prey.species %>% filter(species == "Cyclopoid Copepodid")%>% 
+  mutate(envir.count.species.25 = round(prey.count.species * 0.25, 0),
+         envir.count.species.add25 = prey.count.species + envir.count.species.25,
+         envir.count.species.min25 = prey.count.species - envir.count.species.25)
+envir.cyc.cop.25 <- envir.cal.cop %>% select(trawl, envir.count.species.25)
+
+envir.cyc.add <- envir.prey.species %>% filter(species == "Cyclopidae") %>% 
+  left_join(envir.cyc.cop.25) %>% 
+  group_by(trawl) %>% 
+  summarize(prey.count.species = prey.count.species + envir.count.species.25) %>% 
+  mutate(species = "Cyclopidae")
+envir.cyc.min <- envir.prey.species %>% filter(species == "Cyclopidae") %>% 
+  left_join(envir.cyc.cop.25) %>% 
+  group_by(trawl) %>% 
+  summarize(prey.count.species = prey.count.species - envir.count.species.25) %>% 
+  mutate(species = "Cyclopidae")
+
+
+envir.cal.cop.add <- envir.cal.cop %>% select(trawl, species, prey.count.species = envir.count.species.add25)
+envir.cal.cop.min <- envir.cal.cop %>% select(trawl, species, prey.count.species = envir.count.species.min25)
+
+envir.cyc.cop.add <- envir.cyc.cop %>% select(trawl, species, prey.count.species = envir.count.species.add25)
+envir.cyc.cop.min <- envir.cyc.cop %>% select(trawl, species, prey.count.species = envir.count.species.min25)
+
+envir.add <- bind_rows(envir.cal.add, envir.cyc.add, envir.cal.cop.min, envir.cyc.cop.min)
+envir.min <- bind_rows(envir.cal.min, envir.cyc.min, envir.cal.cop.add, envir.cyc.cop.add)
+
+
+envir.else <- envir.prey.species %>% filter(species != "Calanoid Copepodid", species != "Cyclopoid Copepodid",
+                                          species != "Calanoidae", species != "Cyclopidae")
+
+envir.prey.add.all <- bind_rows(envir.else, envir.add)
+envir.prey.min.all <- bind_rows(envir.else, envir.min)
+rm(envir.else, envir.min, envir.add, envir.cyc.cop.min, envir.cyc.cop.add, envir.cal.cop.min, envir.cal.cop.add,
+   envir.cyc.min, envir.cyc.add, envir.cyc.cop.25, envir.cyc.cop, envir.cal.min, envir.cal.add, envir.cal.cop.25, envir.cal.cop,)
+
+sum(envir.prey.species$prey.count.species)
+sum(envir.prey.add.all$prey.count.species)
+sum(envir.prey.min.all$prey.count.species)
+
+
+
+
+
+
+
 ## Group by trawl to sum total prey counts for each trawl
 envir.prey.total <- envir.prey.all %>% group_by(trawl) %>% 
   summarize(prey.count.trawl.total = sum(density.l))
 
 ## Join the total counts and species specific counts to calculate proportion of diet for each trawl
 ##  If proportion is NA, replace with zero
-envir.prey.prop <- full_join(envir.prey.species, envir.prey.total) %>% 
+envir.prey.prop <- full_join(envir.prey.min.all, envir.prey.total) %>% 
   mutate(envir.prop = prey.count.species / prey.count.trawl.total,
          envir.prop = ifelse(is.na(envir.prop) == TRUE, 0, envir.prop)) %>% 
   select(trawl, species, envir.prop)
@@ -263,5 +333,5 @@ ggplot(larval.selectivity.week, aes(x = week, y = mean.E, group = 1)) +
         panel.spacing.x = unit(1, "lines"), panel.spacing.y = unit(-2, "lines")) +
   facet_rep_wrap(~species, dir = "v", ncol = 2)
 
-ggsave("figures/Fig_8_electivity.tiff", dpi = 300, width = 10, height = 10)
+ggsave("figures/Fig_8_electivity_minCop.tiff", dpi = 300, width = 10, height = 10)
 
